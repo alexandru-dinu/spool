@@ -3,6 +3,8 @@
 </p>
 
 # Spool
+[![Tests](https://github.com/alexandru-dinu/spool/actions/workflows/main.yml/badge.svg)](https://github.com/alexandru-dinu/spool/actions/workflows/main.yml)
+
 *Spool* is a simple, stack-based programming language. The project is work in progress.
 
 You can find examples in the [spool](./spool/) directory.  The source code is in [spool.py](./src/spool.py).

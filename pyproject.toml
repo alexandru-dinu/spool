@@ -27,3 +27,8 @@ ignore = [
     "C901",  # too complex
 ]
 
+[dependency-groups]
+dev = [
+    "pytest>=8.4.2",
+]
+
