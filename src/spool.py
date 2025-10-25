@@ -291,11 +291,13 @@ class Spool:
 
                 # errors
                 case other:
-                    raise SpoolSyntaxError(f"Invalid token {other} @ index {pc}.")
+                    raise SpoolSyntaxError(f"Invalid token `{other}` @ index {pc}.")
 
             pc += 1
 
 
+# TODO: separate call stacks? (separate function args from global context)
+# TODO: lists
 # TODO: errors (... @ index ...)
 # TODO: tracebacks (pass context around?)
 # TODO: comments
