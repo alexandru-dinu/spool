@@ -3,10 +3,28 @@
 </p>
 
 # Spool
-*Spool* is a simple, stack-based programming language.
+*Spool* is a simple, stack-based programming language. The project is work in progress.
 
 You can find examples in the [spool](./spool/) directory.  The source code is in [spool.py](./src/spool.py).
 
+## Features
+- variables
+- types: int / float / str
+- string manipulation: len, indexing
+- if/else
+- function calls
+- while loops
+
+### TODOs
+<!-- MDUP:BEG (CMD:make todo) -->
+```
+# TODO: errors (... @ index ...)
+# TODO: tracebacks (pass context around?)
+# TODO: comments
+# TODO: did you mean for errors
+# TODO: write highlighter for vim
+```
+<!-- MDUP:END -->
 
 ## Usage
 The project uses [`uv`](https://docs.astral.sh/uv/) which I highly recommend for managing Python environments and dependencies.
@@ -16,6 +34,7 @@ uv run src/spool.py spool/collatz.spl
 
 ## Examples
 **Collatz sequence**
+<!-- MDUP:BEG (CMD:cat spool/collatz.spl) -->
 ```
 func collatz_once 1
     dup set x
@@ -40,8 +59,10 @@ end
 
 5 call collatz_seq
 ```
+<!-- MDUP:END -->
 
 **FizzBuzz**
+<!-- MDUP:BEG (CMD:cat spool/fizzbuzz.spl) -->
 ```
 1 set i
 50 set n
@@ -66,3 +87,4 @@ do
     get i 1 + set i
 end
 ```
+<!-- MDUP:END -->
