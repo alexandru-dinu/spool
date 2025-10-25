@@ -1,0 +1,29 @@
+[project]
+name = "spool"
+version = "0.1.0"
+description = "Simple stack-based PL."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "jinja2>=3.1.6",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "B",    # flake8-bugbear
+    "C4",   # flake8-comprehensions
+    "SIM",  # flake8-simplify
+    "I",    # isort (import sorting)
+    "N",    # pep8-naming
+    "UP",   # pyupgrade (modern syntax)
+    # "TRY",  # tryceratops (exception handling)
+    "PERF", # performance rules
+]
+ignore = [
+    "E501",  # line too long, handled by black
+    "C901",  # too complex
+]
+
