@@ -1,13 +1,20 @@
-# Spool
+<p align="center">
+    <img src="./assets/spool.png" width="100px" style="vertical-align: middle;" />
+</p>
 
-Simple stack-based programming language.
+# Spool
+*Spool* is a simple, stack-based programming language.
+
+You can find examples in the [spool](./spool/) directory.  The source code is in [spool.py](./src/spool.py).
+
 
 ## Usage
+The project uses [`uv`](https://docs.astral.sh/uv/) which I highly recommend for managing Python environments and dependencies.
 ```sh
 uv run src/spool.py spool/collatz.spl
 ```
 
-## Examples:
+## Examples
 **Collatz sequence**
 ```
 func collatz_once 1
