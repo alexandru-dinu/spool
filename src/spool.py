@@ -44,7 +44,7 @@ class SpoolVarsError(Exception):
 class Spool:
     def __init__(self):
         self.stack: list[Value] = []
-        self.vars: dict[str, Value] = {}
+        self.global_vars: dict[str, Value] = {}
         self.funcs: dict[str, tuple[int, list[str]]] = {}  # name -> (arity, body)
 
     @staticmethod
@@ -114,9 +114,9 @@ class Spool:
         return prog.split()
 
     def execute(self, prog: str) -> Generator:
-        yield from self._run(self.parse(prog))
+        yield from self._run(self.parse(prog), ctx_vars=self.global_vars)
 
-    def _run(self, tokens: list[str], pc: int = 0) -> Generator:
+    def _run(self, tokens: list[str], ctx_vars: dict, pc: int = 0) -> Generator:
         while pc < len(tokens):
             tok = tokens[pc]
 
@@ -127,7 +127,22 @@ class Spool:
                 case _ if (num := Spool._try_numeric(tok)) is not None:
                     self.stack.append(num)
 
-                case "+" | "-" | "*" | "/" | "%" | "==" | "<" | "<=" | ">" | ">=" | "&&" | "||":
+                case (
+                    "+"
+                    | "-"
+                    | "*"
+                    | "/"
+                    | "//"
+                    | "%"
+                    | "**"
+                    | "=="
+                    | "<"
+                    | "<="
+                    | ">"
+                    | ">="
+                    | "&&"
+                    | "||"
+                ):
                     if len(self.stack) < 2:
                         raise SpoolStackError(
                             f"Insufficient values on the stack for operation `{tok}`. Expected >= 2, got {len(self.stack)}."
@@ -140,12 +155,13 @@ class Spool:
                     if tok == "*":
                         self.stack.append(a * b)
                     if tok == "/":
-                        _f = round(a / b, 4)
-                        if _f == (_i := int(_f)):
-                            _f = _i
-                        self.stack.append(_f)
+                        self.stack.append(a / b)
+                    if tok == "//":
+                        self.stack.append(a // b)
                     if tok == "%":
                         self.stack.append(a % b)
+                    if tok == "**":
+                        self.stack.append(a**b)
                     if tok == "==":
                         self.stack.append(a == b)
                     if tok == "<":
@@ -161,6 +177,18 @@ class Spool:
                     if tok == "||":
                         self.stack.append(a or b)
 
+                case "round":
+                    if not self.stack:
+                        raise SpoolStackError("Stack is empty.")
+
+                    try:
+                        ndigits = int(tokens[pc + 1])
+                    except ValueError as e:
+                        raise SpoolSyntaxError("round: `ndigits must be an integer.") from e
+
+                    self.stack.append(round(self.stack.pop(), ndigits))
+                    pc += 1
+
                 case "set":
                     if not self.stack:
                         raise SpoolStackError("Stack is empty.")
@@ -169,17 +197,17 @@ class Spool:
                     if not Spool._is_valid_ident(v):
                         raise SpoolSyntaxError(f"Invalid identifier name `{v}`.")
 
-                    self.vars[v] = self.stack.pop()
+                    ctx_vars[v] = self.stack.pop()
                     pc += 1
 
                 case "get":
                     v = tokens[pc + 1]
                     if not Spool._is_valid_ident(v):
                         raise SpoolSyntaxError(f"Invalid identifier name `{v}`.")
-                    if v not in self.vars:
+                    if v not in ctx_vars:
                         raise SpoolVarsError(f"Variable `{v}` is not defined.")
 
-                    self.stack.append(self.vars[v])
+                    self.stack.append(ctx_vars[v])
                     pc += 1
 
                 case "if":
@@ -191,9 +219,9 @@ class Spool:
 
                     # condition is the last thing on the stack
                     if self.stack.pop():
-                        yield from self._run(block_true, pc=0)
+                        yield from self._run(block_true, ctx_vars=ctx_vars)
                     elif block_else:
-                        yield from self._run(block_else, pc=0)
+                        yield from self._run(block_else, ctx_vars=ctx_vars)
 
                     pc = pc_end
 
@@ -207,10 +235,10 @@ class Spool:
                     )
 
                     while True:
-                        yield from self._run(block_cond, pc=0)
+                        yield from self._run(block_cond, ctx_vars)
                         if not self.stack.pop():
                             break
-                        yield from self._run(block_body)
+                        yield from self._run(block_body, ctx_vars)
 
                     pc = pc_end
 
@@ -218,13 +246,16 @@ class Spool:
                     # func <name> <arity> <body> end
                     name = tokens[pc + 1]
                     if not Spool._is_valid_ident(name):
-                        raise SpoolSyntaxError(f"Invalid function name `{name}`")
+                        raise SpoolSyntaxError(f"Invalid function name `{name}`.")
 
-                    arity = tokens[pc + 2]
-                    assert arity.isnumeric()
+                    try:
+                        arity = int(tokens[pc + 2])
+                        assert arity >= 0
+                    except (ValueError, AssertionError) as e:
+                        raise SpoolSyntaxError("Function arity must be an integer >= 0.") from e
 
                     body, pc_end = Spool._collect_until(keyword="end", tokens=tokens, index=pc + 3)
-                    self.funcs[name] = (int(arity), body)
+                    self.funcs[name] = (arity, body)
                     pc = pc_end
 
                 case "call":
@@ -241,7 +272,7 @@ class Spool:
                             f"Insufficient number of args for function `{name}`. Expected {arity} got {_n}."
                         )
 
-                    yield from self._run(func_body, pc=0)
+                    yield from self._run(func_body, ctx_vars={})
                     pc += 1
 
                 # strings ops
@@ -271,6 +302,16 @@ class Spool:
                     self.stack.append(s[i])
                 # //
 
+                case "swap":
+                    # [..., a, b] becomes [..., b, a]
+                    if len(self.stack) < 2:
+                        raise SpoolStackError(
+                            f"Insufficient values on the stack for operation `{tok}`. Expected >= 2, got {len(self.stack)}."
+                        )
+                    b, a = self.stack.pop(), self.stack.pop()
+                    self.stack.append(b)
+                    self.stack.append(a)
+
                 case "dup":  # no-op if stack is empty
                     if self.stack:
                         self.stack.append(self.stack[-1])
@@ -287,7 +328,7 @@ class Spool:
                     yield self.stack[::]
 
                 case "vars":
-                    yield self.vars.copy()
+                    yield ctx_vars.copy()
 
                 # errors
                 case other:
@@ -296,13 +337,15 @@ class Spool:
             pc += 1
 
 
-# TODO: separate call stacks? (separate function args from global context)
+# TODO: func args & arity: having #(set) == func's arity
 # TODO: lists
 # TODO: errors (... @ index ...)
 # TODO: tracebacks (pass context around?)
 # TODO: comments
 # TODO: did you mean for errors
 # TODO: write highlighter for vim
+# TODO: library of utils
+# TODO: impl rule110
 
 if __name__ == "__main__":
     parser = ArgumentParser()

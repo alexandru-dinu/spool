@@ -1,7 +1,7 @@
 func collatz_once 1
     dup set x
     2 % 0 == if
-        get x 2 /
+        get x 2 //
     else
         get x 3 * 1 +
     end

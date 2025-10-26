@@ -1,6 +1,14 @@
+from pathlib import Path
+
 import jinja2
+import pytest
 
 from spool import Spool
+
+
+@pytest.fixture
+def spool_root():
+    return Path(__file__).resolve().parents[1] / "spool"
 
 
 def test_arithmetic():
@@ -36,11 +44,11 @@ def test_vars():
         set z
         peek
         vars
-        get y 17 /
+        get y 17 / round 5
         peek
         """
     )
-    assert list(out) == [230, None, {"x": 10, "y": 23, "z": 230}, round(23 / 17, 4)]
+    assert list(out) == [230, None, {"x": 10, "y": 23, "z": 230}, round(23 / 17, 5)]
 
 
 def test_if_else():
@@ -140,7 +148,7 @@ def test_strings():
         """
     )
     assert list(out) == ["foobar", 6, "f", "o", "o", "b", "a", "r"]
-    assert s.vars == {"x": "foo", "y": "bar", "z": "foobar", "i": 6, "n": 6}
+    assert s.global_vars == {"x": "foo", "y": "bar", "z": "foobar", "i": 6, "n": 6}
 
 
 def test_fizzbuzz():
@@ -265,6 +273,11 @@ def test_func():
 
     for arg in [5, 27, 91, 871, 6171]:
         assert list(s.execute(prog.render(arg=arg))) == list(_cs(arg))
+
+
+def test_sin_approx(spool_root):
+    out = Spool().execute((spool_root / "sin_approx.spl").read_text())
+    assert list(out) == [0, 0.5, 0.707, 0.866, 1]
 
 
 if __name__ == "__main__":
