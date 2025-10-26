@@ -5,7 +5,9 @@
 # Spool
 [![Tests](https://github.com/alexandru-dinu/spool/actions/workflows/main.yml/badge.svg)](https://github.com/alexandru-dinu/spool/actions/workflows/main.yml)
 
-*Spool* is a simple, stack-based programming language. The project is work in progress.
+*Spool* is a simple, stack-based programming language.
+The name was born from the literal `StackPL`; I then decided to use the `.spl` extension, which sounds like "spool".
+The project is work in progress.
 
 You can find examples in the [spool](./spool/) directory.  The source code is in [spool.py](./src/spool.py).
 
@@ -20,11 +22,14 @@ You can find examples in the [spool](./spool/) directory.  The source code is in
 ### TODOs
 <!-- MDUP:BEG (CMD:make todo) -->
 ```
+# TODO: separate call stacks? (separate function args from global context)
+# TODO: lists
 # TODO: errors (... @ index ...)
 # TODO: tracebacks (pass context around?)
 # TODO: comments
 # TODO: did you mean for errors
 # TODO: write highlighter for vim
+# TODO: impl rule110
 ```
 <!-- MDUP:END -->
 
