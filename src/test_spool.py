@@ -7,8 +7,8 @@ from spool import Spool
 
 
 @pytest.fixture
-def spool_root():
-    return Path(__file__).resolve().parents[1] / "spool"
+def examples_root():
+    return Path(__file__).resolve().parents[1] / "examples"
 
 
 def test_arithmetic():
@@ -275,8 +275,8 @@ def test_func():
         assert list(s.execute(prog.render(arg=arg))) == list(_cs(arg))
 
 
-def test_sin_approx(spool_root):
-    out = Spool().execute((spool_root / "sin_approx.spl").read_text())
+def test_sin_approx(examples_root):
+    out = Spool().execute((examples_root / "sin_approx.spl").read_text())
     assert list(out) == [0, 0.5, 0.707, 0.866, 1]
 
 

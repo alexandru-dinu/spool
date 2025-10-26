@@ -9,8 +9,6 @@
 The name was born from the literal `StackPL`; I then decided to use the `.spl` extension, which sounds like "spool".
 The project is work in progress.
 
-You can find examples in the [spool](./spool/) directory.  The source code is in [spool.py](./src/spool.py).
-
 ## Features
 - types: int / float / str
 - variables: get (`@foo`) and set (`$bar`)
@@ -37,12 +35,12 @@ You can find examples in the [spool](./spool/) directory.  The source code is in
 ## Usage
 The project uses [`uv`](https://docs.astral.sh/uv/) which I highly recommend for managing Python environments and dependencies.
 ```sh
-uv run src/spool.py spool/collatz.spl
+uv run src/spool.py examples/collatz.spl
 ```
 
 ## Examples
 ### Collatz sequence
-<!-- MDUP:BEG (CMD:cat spool/collatz.spl) -->
+<!-- MDUP:BEG (CMD:cat examples/collatz.spl) -->
 ```
 func collatz_once 1
     dup $x
@@ -70,7 +68,7 @@ end
 <!-- MDUP:END -->
 
 ### FizzBuzz
-<!-- MDUP:BEG (CMD:cat spool/fizzbuzz.spl) -->
+<!-- MDUP:BEG (CMD:cat examples/fizzbuzz.spl) -->
 ```
 1 $i
 50 $n
@@ -98,7 +96,7 @@ end
 <!-- MDUP:END -->
 
 ### sin Taylor approximation
-<!-- MDUP:BEG (CMD:cat spool/sin_approx.spl) -->
+<!-- MDUP:BEG (CMD:cat examples/sin_approx.spl) -->
 ```
 func factorial 1
     $n
