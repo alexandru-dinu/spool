@@ -12,8 +12,8 @@ The project is work in progress.
 You can find examples in the [spool](./spool/) directory.  The source code is in [spool.py](./src/spool.py).
 
 ## Features
-- variables
 - types: int / float / str
+- variables: get (`@foo`) and set (`$bar`)
 - string manipulation: len, indexing
 - if/else
 - function calls
@@ -45,21 +45,21 @@ uv run src/spool.py spool/collatz.spl
 <!-- MDUP:BEG (CMD:cat spool/collatz.spl) -->
 ```
 func collatz_once 1
-    dup set x
+    dup $x
     2 % 0 == if
-        get x 2 //
+        @x 2 //
     else
-        get x 3 * 1 +
+        @x 3 * 1 +
     end
 end
 
 func collatz_seq 1
-    dup set x peek
+    dup $x peek
     while
-        get x 1 >
+        @x 1 >
     do
         call collatz_once
-        dup set x
+        dup $x
         peek
     end
     pop
@@ -72,27 +72,27 @@ end
 ### FizzBuzz
 <!-- MDUP:BEG (CMD:cat spool/fizzbuzz.spl) -->
 ```
-1 set i
-50 set n
+1 $i
+50 $n
 while
-    get i get n <=
+    @i @n <=
 do
-    "" set x
-    get i 3 % 0 == if
-        get x "fizz" + set x
+    "" $x
+    @i 3 % 0 == if
+        @x "fizz" + $x
     end
-    get i 5 % 0 == if
-        get x "buzz" + set x
+    @i 5 % 0 == if
+        @x "buzz" + $x
     end
-    get i 7 % 0 == if
-        get x "bazz" + set x
+    @i 7 % 0 == if
+        @x "bazz" + $x
     end
-    get x len 0 == if
-        get i peek pop
+    @x len 0 == if
+        @i peek pop
     else
-        get x peek pop
+        @x peek pop
     end
-    get i 1 + set i
+    @i 1 + $i
 end
 ```
 <!-- MDUP:END -->
@@ -101,42 +101,42 @@ end
 <!-- MDUP:BEG (CMD:cat spool/sin_approx.spl) -->
 ```
 func factorial 1
-    set n
-    1 set f
-    1 set i
+    $n
+    1 $f
+    1 $i
     while
-        get i get n <=
+        @i @n <=
     do
-        get f get i * set f
-        get i 1 + set i
+        @f @i * $f
+        @i 1 + $i
     end
-    get f
+    @f
 end
 
 # taylor approx of sin(x)
 func sin 1
-    set x
-    0 set i
-    0 set out
+    $x
+    0 $i
+    0 $out
     while
         # approximate for this many steps
-        get i 10 <
+        @i 10 <
     do
-        get i 2 * 1 + dup
-        get x swap ** set num
-        call factorial set den
-        -1 get i ** set sign
-        get num get den / get sign * get out + set out
-        get i 1 + set i
+        @i 2 * 1 + dup
+        @x swap ** $num
+        call factorial $den
+        -1 @i ** $sign
+        @num @den / @sign * @out + $out
+        @i 1 + $i
     end
-    get out
+    @out
 end
 
-3.1415926 set pi                    # 7 decimal places ought to be enough for everybody
+3.1415926 $pi                    # 7 decimal places ought to be enough for everybody
 0 call sin peek                     # 0.0
-get pi 6 / call sin round 3 peek    # 0.5
-get pi 4 / call sin round 3 peek    # 0.707
-get pi 3 / call sin round 3 peek    # 0.866
-get pi 2 / call sin round 3 peek    # 1.0
+@pi 6 / call sin round 3 peek    # 0.5
+@pi 4 / call sin round 3 peek    # 0.707
+@pi 3 / call sin round 3 peek    # 0.866
+@pi 2 / call sin round 3 peek    # 1.0
 ```
 <!-- MDUP:END -->

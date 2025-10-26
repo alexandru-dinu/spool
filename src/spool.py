@@ -18,13 +18,11 @@ KEYWORDS = [
     "end",
     "for",
     "func",
-    "get",
     "if",
     "len",
     "peek",
     "pop",
     "round",
-    "set",
     "swap",
     "vars",
     "while",
@@ -195,26 +193,24 @@ class Spool:
                     self.stack.append(round(self.stack.pop(), ndigits))
                     pc += 1
 
-                case "set":
+                case _set if _set.startswith("$"):
                     if not self.stack:
                         raise SpoolStackError("Stack is empty.")
 
-                    v = tokens[pc + 1]
+                    v = _set[1:]
                     if not Spool._is_valid_ident(v):
                         raise SpoolSyntaxError(f"Invalid identifier name `{v}`.")
 
                     ctx_vars[v] = self.stack.pop()
-                    pc += 1
 
-                case "get":
-                    v = tokens[pc + 1]
+                case _get if _get.startswith("@"):
+                    v = _get[1:]
                     if not Spool._is_valid_ident(v):
                         raise SpoolSyntaxError(f"Invalid identifier name `{v}`.")
                     if v not in ctx_vars:
                         raise SpoolVarsError(f"Variable `{v}` is not defined.")
 
                     self.stack.append(ctx_vars[v])
-                    pc += 1
 
                 case "if":
                     if not self.stack:

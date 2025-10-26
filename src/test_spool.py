@@ -35,16 +35,16 @@ def test_vars():
     s = Spool()
     out = s.execute(
         """\
-        10 set x
-        23 set y
-        get x
-        get y
+        10 $x
+        23 $y
+        @x
+        @y
         *
         peek
-        set z
+        $z
         peek
         vars
-        get y 17 / round 5
+        @y 17 / round 5
         peek
         """
     )
@@ -55,26 +55,26 @@ def test_if_else():
     s = Spool()
     out = s.execute(
         """\
-        -7 set z
+        -7 $z
         42 20 > if
-            10 set x
-            42 set y
-            get x get y * 42 == if
-                3.14 set ok
+            10 $x
+            42 $y
+            @x @y * 42 == if
+                3.14 $ok
             else
                 -3 2 * -6 == if
-                    1010 set ok
+                    1010 $ok
                 else
-                    -42 set ok
+                    -42 $ok
                 end
-                35 set needle
+                35 $needle
                 10 peek
             end
             20 peek
             / peek
-            17 set foobar
+            17 $foobar
         end
-        get z
+        @z
         vars
         """
     )
@@ -90,15 +90,15 @@ def test_while():
     s = Spool()
     out = s.execute(
         """\
-        0 set i
-        10 set n
+        0 $i
+        10 $n
         while
-            get i get n <=
+            @i @n <=
         do
-            get i 2 % 1 == if
-                get i peek pop
+            @i 2 % 1 == if
+                @i peek pop
             end
-            get i 1 + set i
+            @i 1 + $i
         end
         """
     )
@@ -109,19 +109,19 @@ def test_nested_while():
     s = Spool()
     out = s.execute(
         """\
-        1 set i
-        5 set n
+        1 $i
+        5 $n
         while
-            get i get n <=
+            @i @n <=
         do
-            1 set j
+            1 $j
             while
-                get j get i <=
+                @j @i <=
             do
-                get j peek pop
-                get j 1 + set j
+                @j peek pop
+                @j 1 + $j
             end
-            get i 1 + set i
+            @i 1 + $i
         end
         """
     )
@@ -132,18 +132,18 @@ def test_strings():
     s = Spool()
     out = s.execute(
         """\
-        "foo" set x
-        "bar" set y
-        get x get y + dup set z peek
+        "foo" $x
+        "bar" $y
+        @x @y + dup $z peek
         len peek pop
 
-        get z len set n
-        0 set i
+        @z len $n
+        0 $i
         while
-            get i get n <
+            @i @n <
         do
-            get z get i !! peek pop
-            get i 1 + set i
+            @z @i !! peek pop
+            @i 1 + $i
         end
         """
     )
@@ -156,25 +156,25 @@ def test_fizzbuzz():
     s = Spool()
     out = s.execute(
         """\
-        1 set i
-        20 set n
+        1 $i
+        20 $n
         while
-            get i get n <=
+            @i @n <=
         do
-            get i 3 % 0 == get i 5 % 0 == && if
+            @i 3 % 0 == @i 5 % 0 == && if
                 -15 peek pop
             else
-                get i 3 % 0 == if
+                @i 3 % 0 == if
                     -3 peek pop
                 else
-                    get i 5 % 0 == if
+                    @i 5 % 0 == if
                         -5 peek pop
                     else
-                        get i peek pop
+                        @i peek pop
                     end
                 end
             end
-            get i 1 + set i
+            @i 1 + $i
         end
         """
     )
@@ -184,24 +184,24 @@ def test_fizzbuzz():
     s = Spool()
     out = s.execute(
         """\
-        1 set i
-        20 set n
+        1 $i
+        20 $n
         while
-            get i get n <=
+            @i @n <=
         do
-            "" set x
-            get i 3 % 0 == if
-                get x "fizz" + set x
+            "" $x
+            @i 3 % 0 == if
+                @x "fizz" + $x
             end
-            get i 5 % 0 == if
-                get x "buzz" + set x
+            @i 5 % 0 == if
+                @x "buzz" + $x
             end
-            get x len 0 == if
-                get i peek pop
+            @x len 0 == if
+                @i peek pop
             else
-                get x peek pop
+                @x peek pop
             end
-            get i 1 + set i
+            @i 1 + $i
         end
         """
     )
@@ -238,21 +238,21 @@ def test_func():
         end
 
         func collatz_once 1
-            dup set x
+            dup $x
             2 % 0 == if
-                get x call halve
+                @x call halve
             else
-                get x 3 * 1 +
+                @x 3 * 1 +
             end
         end
 
         func collatz_seq 1
-            dup set x peek
+            dup $x peek
             while
-                get x 1 >
+                @x 1 >
             do
                 call collatz_once
-                dup set x
+                dup $x
                 peek
             end
             pop

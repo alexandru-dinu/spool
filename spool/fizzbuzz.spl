@@ -1,22 +1,22 @@
-1 set i
-50 set n
+1 $i
+50 $n
 while
-    get i get n <=
+    @i @n <=
 do
-    "" set x
-    get i 3 % 0 == if
-        get x "fizz" + set x
+    "" $x
+    @i 3 % 0 == if
+        @x "fizz" + $x
     end
-    get i 5 % 0 == if
-        get x "buzz" + set x
+    @i 5 % 0 == if
+        @x "buzz" + $x
     end
-    get i 7 % 0 == if
-        get x "bazz" + set x
+    @i 7 % 0 == if
+        @x "bazz" + $x
     end
-    get x len 0 == if
-        get i peek pop
+    @x len 0 == if
+        @i peek pop
     else
-        get x peek pop
+        @x peek pop
     end
-    get i 1 + set i
+    @i 1 + $i
 end
