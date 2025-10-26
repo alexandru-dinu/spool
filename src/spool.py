@@ -23,7 +23,9 @@ KEYWORDS = [
     "len",
     "peek",
     "pop",
+    "round",
     "set",
+    "swap",
     "vars",
     "while",
 ]
