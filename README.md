@@ -116,7 +116,6 @@ end
 func sin 1
     set x
     0 set i
-    1 set sign
     0 set out
     while
         get i 10 <
@@ -124,8 +123,8 @@ func sin 1
         get i 2 * 1 + dup
         get x swap ** set num
         call factorial set den
+        -1 get i ** set sign
         get num get den / get sign * get out + set out
-        get sign -1 * set sign
         get i 1 + set i
     end
     get out
