@@ -18,6 +18,7 @@ You can find examples in the [spool](./spool/) directory.  The source code is in
 - if/else
 - function calls
 - while loops
+- inline comments
 
 ### TODOs
 <!-- MDUP:BEG (CMD:make todo) -->
@@ -26,7 +27,6 @@ You can find examples in the [spool](./spool/) directory.  The source code is in
 # TODO: lists
 # TODO: errors (... @ index ...)
 # TODO: tracebacks (pass context around?)
-# TODO: comments
 # TODO: did you mean for errors
 # TODO: write highlighter for vim
 # TODO: library of utils
@@ -113,11 +113,13 @@ func factorial 1
     get f
 end
 
+# taylor approx of sin(x)
 func sin 1
     set x
     0 set i
     0 set out
     while
+        # approximate for this many steps
         get i 10 <
     do
         get i 2 * 1 + dup
@@ -130,11 +132,11 @@ func sin 1
     get out
 end
 
-3.1415926 set pi
-0 call sin peek
-get pi 6 / call sin round 3 peek
-get pi 4 / call sin round 3 peek
-get pi 3 / call sin round 3 peek
-get pi 2 / call sin round 3 peek
+3.1415926 set pi                    # 7 decimal places ought to be enough for everybody
+0 call sin peek                     # 0.0
+get pi 6 / call sin round 3 peek    # 0.5
+get pi 4 / call sin round 3 peek    # 0.707
+get pi 3 / call sin round 3 peek    # 0.866
+get pi 2 / call sin round 3 peek    # 1.0
 ```
 <!-- MDUP:END -->

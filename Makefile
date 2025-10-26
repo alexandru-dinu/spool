@@ -1,9 +1,19 @@
 .PHONY: test
 test:
-	uv run pytest -v src/test_*.py
+	@uv run pytest -v src/test_*.py
+
+.PHONY: lint
+lint:
+	@uv run ruff check src/*.py
+
+.PHONY: format
+format:
+	@uv tool run autoflake --in-place --remove-all-unused-imports src/*.py \
+		&& uv tool run isort src/*.py \
+		&& uv tool run black --line-length 100 src/*.py
 
 refresh-readme:
-	uv tool run mdup -i README.md
+	@uv tool run mdup -i README.md
 
 todo:
 	@rg -wN "TODO" src/spool.py

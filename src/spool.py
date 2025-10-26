@@ -111,7 +111,11 @@ class Spool:
         return tokens, None
 
     def parse(self, prog: str) -> list[str]:
-        return prog.split()
+        toks = []
+        for line in prog.splitlines():
+            # <code>#<comment>
+            toks += line.split("#", maxsplit=1)[0].strip().split()
+        return toks
 
     def execute(self, prog: str) -> Generator:
         yield from self._run(self.parse(prog), ctx_vars=self.global_vars)
@@ -341,7 +345,6 @@ class Spool:
 # TODO: lists
 # TODO: errors (... @ index ...)
 # TODO: tracebacks (pass context around?)
-# TODO: comments
 # TODO: did you mean for errors
 # TODO: write highlighter for vim
 # TODO: library of utils
