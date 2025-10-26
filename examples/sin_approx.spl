@@ -31,7 +31,7 @@ func sin 1
 end
 
 3.1415926 $pi                    # 7 decimal places ought to be enough for everybody
-0 call sin peek                     # 0.0
+0 call sin peek                  # 0.0
 @pi 6 / call sin round 3 peek    # 0.5
 @pi 4 / call sin round 3 peek    # 0.707
 @pi 3 / call sin round 3 peek    # 0.866

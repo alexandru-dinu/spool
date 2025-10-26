@@ -194,17 +194,20 @@ class Spool:
                     pc += 1
 
                 case _set if _set.startswith("$"):
-                    if not self.stack:
-                        raise SpoolStackError("Stack is empty.")
-
                     v = _set[1:]
+                    if not v:
+                        raise SpoolSyntaxError("No identifier to set. Syntax is: `$foo`.")
                     if not Spool._is_valid_ident(v):
                         raise SpoolSyntaxError(f"Invalid identifier name `{v}`.")
+                    if not self.stack:
+                        raise SpoolStackError("Stack is empty.")
 
                     ctx_vars[v] = self.stack.pop()
 
                 case _get if _get.startswith("@"):
                     v = _get[1:]
+                    if not v:
+                        raise SpoolSyntaxError("No identifier to get. Syntax is: `@foo`.")
                     if not Spool._is_valid_ident(v):
                         raise SpoolSyntaxError(f"Invalid identifier name `{v}`.")
                     if v not in ctx_vars:
