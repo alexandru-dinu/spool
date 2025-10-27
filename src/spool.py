@@ -30,6 +30,23 @@ KEYWORDS = [
     "while",
 ]
 
+BINOPS = {
+    "+": lambda a, b: a + b,
+    "-": lambda a, b: a - b,
+    "*": lambda a, b: a * b,
+    "/": lambda a, b: a / b,
+    "//": lambda a, b: a // b,
+    "%": lambda a, b: a % b,
+    "**": lambda a, b: a**b,
+    "==": lambda a, b: a == b,
+    "<": lambda a, b: a < b,
+    "<=": lambda a, b: a <= b,
+    ">": lambda a, b: a > b,
+    ">=": lambda a, b: a >= b,
+    "&&": lambda a, b: a and b,
+    "||": lambda a, b: a or b,
+}
+
 
 class SpoolSyntaxError(Exception):
     pass
@@ -385,34 +402,7 @@ class SpoolEval:
 
                 case BinOp(op):
                     b, a = self.stack.pop(), self.stack.pop()
-                    if op == "+":
-                        self.stack.append(a + b)
-                    if op == "-":
-                        self.stack.append(a - b)
-                    if op == "*":
-                        self.stack.append(a * b)
-                    if op == "/":
-                        self.stack.append(a / b)
-                    if op == "//":
-                        self.stack.append(a // b)
-                    if op == "%":
-                        self.stack.append(a % b)
-                    if op == "**":
-                        self.stack.append(a**b)
-                    if op == "==":
-                        self.stack.append(a == b)
-                    if op == "<":
-                        self.stack.append(a < b)
-                    if op == "<=":
-                        self.stack.append(a <= b)
-                    if op == ">":
-                        self.stack.append(a > b)
-                    if op == ">=":
-                        self.stack.append(a >= b)
-                    if op == "&&":
-                        self.stack.append(a and b)
-                    if op == "||":
-                        self.stack.append(a or b)
+                    self.stack.append(BINOPS[op](a, b))
 
                 case Round(ndigits):
                     if not self.stack:
