@@ -1,3 +1,7 @@
+.PHONY: all
+all:
+	make format && make lint && make test && make refresh-readme
+
 .PHONY: test
 test:
 	@uv run pytest -v src/test_*.py
