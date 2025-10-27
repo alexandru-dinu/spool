@@ -20,16 +20,19 @@ The project is experimental and work in progress.
 - inline comments
 
 ### TODOs
-<!-- MDUP:BEG (CMD:make todo) -->
+<!-- MDUP:BEG (CMD:cat TODO.md) -->
 ```
-# TODO: tests for expected errors
-# TODO: lists
-# TODO: errors (... @ index ...)
-# TODO: tracebacks (pass context around?)
-# TODO: did you mean for errors
-# TODO: write highlighter for vim
-# TODO: library of utils
-# TODO: impl rule110
+- [ ] TODO: Nodes for each value type?
+- [ ] TODO: add loc info for error reporting.
+- [ ] type classes for each type: int, float, str
+- [ ] tests for expected errors
+- [ ] lists
+- [ ] errors (... @ index ...)
+- [ ] tracebacks (pass context around?)
+- [ ] did you mean for errors
+- [ ] write highlighter for vim
+- [ ] library of utils
+- [ ] impl rule110
 ```
 <!-- MDUP:END -->
 
