@@ -1,11 +1,11 @@
-- [ ] TODO: Nodes for each value type?
-- [ ] TODO: add loc info for error reporting.
-- [ ] type classes for each type: int, float, str
-- [ ] tests for expected errors
-- [ ] lists
-- [ ] errors (... @ index ...)
-- [ ] tracebacks (pass context around?)
-- [ ] did you mean for errors
-- [ ] write highlighter for vim
-- [ ] library of utils
-- [ ] impl rule110
+- Nodes for each value type
+- Add loc info for error reporting
+- Type classes for each type: int, float, str
+- Tests for expected errors
+- Lists
+- Errors (... @ index ...)
+- Tracebacks (pass context around?)
+- "Did you mean?" for errors
+- Write highlighter for vim
+- Library of utils
+- Impl rule110
