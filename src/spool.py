@@ -10,7 +10,6 @@ from pathlib import Path
 
 type Value = float | int | str
 
-# TODO: generate auto
 KEYWORDS = [
     "call",
     "do",
@@ -29,7 +28,6 @@ KEYWORDS = [
     "vars",
     "while",
 ]
-
 BINOPS = {
     "+": lambda a, b: a + b,
     "-": lambda a, b: a - b,
@@ -370,18 +368,18 @@ class SpoolAST:
         return Block(nodes)
 
 
-class SpoolEval:
+class SpoolInterpreter:
     def __init__(self, ast: SpoolAST):
         self.ast = ast
         self.stack: list[Value] = []
         self.global_vars: dict[str, Value] = {}
         self.funcs: dict[str, tuple[list[str], Block]] = {}  # name -> (args, body)
 
-    def evaluate(self) -> Generator:
-        yield from self._eval(self.ast.root.stmts, ctx_vars=self.global_vars, pc=0)
+    def run(self) -> Generator:
+        yield from self.__run(self.ast.root, ctx_vars=self.global_vars, pc=0)
 
-    def _eval(self, nodes: list[Node], ctx_vars: dict, pc: int = 0) -> Generator:
-        for node in nodes:
+    def __run(self, nodes: Block, ctx_vars: dict, pc: int = 0) -> Generator:
+        for node in nodes.stmts:
             match node:
                 case Push(val):
                     self.stack.append(val)
@@ -423,16 +421,16 @@ class SpoolEval:
                     if not self.stack:
                         raise SpoolStackError("Stack is empty.")
                     if self.stack.pop():
-                        yield from self._eval(true_block.stmts, ctx_vars=ctx_vars)
+                        yield from self.__run(true_block, ctx_vars=ctx_vars)
                     elif else_block:
-                        yield from self._eval(else_block.stmts, ctx_vars=ctx_vars)
+                        yield from self.__run(else_block, ctx_vars=ctx_vars)
 
                 case While(cond, body):
                     while True:
-                        yield from self._eval(cond.stmts, ctx_vars=ctx_vars)
+                        yield from self.__run(cond, ctx_vars=ctx_vars)
                         if not self.stack.pop():
                             break
-                        yield from self._eval(body.stmts, ctx_vars=ctx_vars)
+                        yield from self.__run(body, ctx_vars=ctx_vars)
 
                 case Func(name, args, body):
                     self.funcs[name] = (args, body)
@@ -447,7 +445,7 @@ class SpoolEval:
                             f"Insufficient number of args for function `{func}`. Expected {arity} got {_n}."
                         )
                     # prepopulate the ctx with `arity` values from the stack into the given names
-                    yield from self._eval(func_body.stmts, ctx_vars={arg: self.stack.pop() for arg in args[::-1]})
+                    yield from self.__run(func_body, ctx_vars={arg: self.stack.pop() for arg in args[::-1]})
 
                 case Len():
                     if not self.stack:
@@ -488,13 +486,17 @@ class SpoolEval:
                     raise SpoolSyntaxError(f"Invalid AST node `{other}`.")
 
 
+def spool(prog: str) -> Generator:
+    """Wrapper for convenience"""
+    ast = SpoolAST(prog)
+    out = SpoolInterpreter(ast).run()
+    return out
+
+
 if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument("file", type=Path)
     args = parser.parse_args()
 
-    ast = SpoolAST(prog=args.file.read_text())
-    out = SpoolEval(ast=ast).evaluate()
-
-    for o in out:
+    for o in spool(args.file.read_text()):
         print(o)

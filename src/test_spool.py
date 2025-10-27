@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from spool import SpoolAST, SpoolEval
+from spool import SpoolAST, SpoolInterpreter, spool
 
 
 @pytest.fixture
@@ -24,8 +24,7 @@ def test_arithmetic():
         1 2 3
         dump
         """
-    out = SpoolEval(SpoolAST(prog)).evaluate()
-    assert list(out) == [5, -3, [5, -3], 2, [1, 2, 3]]
+    assert list(spool(prog)) == [5, -3, [5, -3], 2, [1, 2, 3]]
 
 
 def test_vars():
@@ -42,8 +41,7 @@ def test_vars():
         @y 17 / round 5
         peek
         """
-    out = SpoolEval(SpoolAST(prog)).evaluate()
-    assert list(out) == [230, None, {"x": 10, "y": 23, "z": 230}, round(23 / 17, 5)]
+    assert list(spool(prog)) == [230, None, {"x": 10, "y": 23, "z": 230}, round(23 / 17, 5)]
 
 
 def test_if_else():
@@ -70,8 +68,7 @@ def test_if_else():
         @z
         vars
         """
-    out = SpoolEval(SpoolAST(prog)).evaluate()
-    assert list(out) == [
+    assert list(spool(prog)) == [
         10,
         20,
         0.5,
@@ -92,8 +89,7 @@ def test_while():
             @i 1 + $i
         end
         """
-    out = SpoolEval(SpoolAST(prog)).evaluate()
-    assert list(out) == list(range(1, 10, 2))
+    assert list(spool(prog)) == list(range(1, 10, 2))
 
 
 def test_nested_while():
@@ -113,8 +109,7 @@ def test_nested_while():
             @i 1 + $i
         end
         """
-    out = SpoolEval(SpoolAST(prog)).evaluate()
-    assert list(out) == sum([list(range(1, n + 1)) for n in range(1, 5 + 1)], [])
+    assert list(spool(prog)) == sum([list(range(1, n + 1)) for n in range(1, 5 + 1)], [])
 
 
 def test_strings():
@@ -133,8 +128,8 @@ def test_strings():
             @i 1 + $i
         end
         """
-    s = SpoolEval(SpoolAST(prog))
-    assert list(s.evaluate()) == ["foobar", 6, "f", "o", "o", "b", "a", "r"]
+    s = SpoolInterpreter(SpoolAST(prog))
+    assert list(s.run()) == ["foobar", 6, "f", "o", "o", "b", "a", "r"]
     assert s.global_vars == {"x": "foo", "y": "bar", "z": "foobar", "i": 6, "n": 6}
 
 
@@ -162,8 +157,7 @@ def test_fizzbuzz():
             @i 1 + $i
         end
         """
-    out = SpoolEval(SpoolAST(prog)).evaluate()
-    assert list(out) == [1, 2, -3, 4, -5, -3, 7, 8, -3, -5, 11, -3, 13, 14, -15, 16, 17, -3, 19, -5]
+    assert list(spool(prog)) == [1, 2, -3, 4, -5, -3, 7, 8, -3, -5, 11, -3, 13, 14, -15, 16, 17, -3, 19, -5]
 
     # cleaner impl. with strings
     prog = """\
@@ -187,8 +181,7 @@ def test_fizzbuzz():
             @i 1 + $i
         end
         """
-    out = SpoolEval(SpoolAST(prog)).evaluate()
-    assert list(out) == [
+    assert list(spool(prog)) == [
         1,
         2,
         "fizz",
@@ -224,11 +217,9 @@ def test_func(examples_root):
 
     for arg in [5, 27, 91, 871, 6171]:
         prog = (examples_root / "collatz.spl").read_text().replace("5 call collatz_seq", f"{arg} call collatz_seq")
-        out = SpoolEval(SpoolAST(prog)).evaluate()
-        assert list(out) == list(_cs(arg))
+        assert list(spool(prog)) == list(_cs(arg))
 
 
 def test_sin_approx(examples_root):
     prog = (examples_root / "sin_approx.spl").read_text()
-    out = SpoolEval(SpoolAST(prog)).evaluate()
-    assert list(out) == [0, 0.5, 0.707, 0.866, 1]
+    assert list(spool(prog)) == [0, 0.5, 0.707, 0.866, 1]
