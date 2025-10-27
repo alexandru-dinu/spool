@@ -15,14 +15,14 @@ The project is experimental and work in progress.
 - variables: get (`@foo`) and set (`$bar`)
 - string manipulation: len, indexing
 - if/else
-- function calls
+- functions: `func <name> <arity:N> <arg1>..<argN> <body> end`
 - while loops
 - inline comments
 
 ### TODOs
 <!-- MDUP:BEG (CMD:make todo) -->
 ```
-# TODO: func args & arity: having #(set) == func's arity
+# TODO: tests for expected errors
 # TODO: lists
 # TODO: errors (... @ index ...)
 # TODO: tracebacks (pass context around?)
@@ -47,8 +47,8 @@ uv run src/spool.py examples/collatz.spl
 ### Collatz sequence
 <!-- MDUP:BEG (CMD:cat examples/collatz.spl) -->
 ```
-func collatz_once 1
-    dup $x
+func collatz_once 1 x
+    @x dup
     2 % 0 == if
         @x 2 //
     else
@@ -56,8 +56,8 @@ func collatz_once 1
     end
 end
 
-func collatz_seq 1
-    dup $x peek
+func collatz_seq 1 x
+    @x dup peek
     while
         @x 1 >
     do
@@ -75,36 +75,37 @@ end
 ### FizzBuzz
 <!-- MDUP:BEG (CMD:cat examples/fizzbuzz.spl) -->
 ```
-1 $i
-50 $n
-while
-    @i @n <=
-do
-    "" $x
-    @i 3 % 0 == if
-        @x "fizz" + $x
+func fizzbuzz 2 lo hi
+    while
+        @lo @hi <=
+    do
+        "" $x
+        @lo 3 % 0 == if
+            @x "fizz" + $x
+        end
+        @lo 5 % 0 == if
+            @x "buzz" + $x
+        end
+        @lo 7 % 0 == if
+            @x "bazz" + $x
+        end
+        @x len 0 == if
+            @lo peek pop
+        else
+            @x peek pop
+        end
+        @lo 1 + $lo
     end
-    @i 5 % 0 == if
-        @x "buzz" + $x
-    end
-    @i 7 % 0 == if
-        @x "bazz" + $x
-    end
-    @x len 0 == if
-        @i peek pop
-    else
-        @x peek pop
-    end
-    @i 1 + $i
 end
+
+10 20 call fizzbuzz
 ```
 <!-- MDUP:END -->
 
 ### sin Taylor approximation
 <!-- MDUP:BEG (CMD:cat examples/sin_approx.spl) -->
 ```
-func factorial 1
-    $n
+func factorial 1 n
     1 $f
     1 $i
     while
@@ -117,12 +118,11 @@ func factorial 1
 end
 
 # taylor approx of sin(x)
-func sin 1
-    $x
+func sin 1 x
     0 $i
     0 $out
     while
-        # approximate for this many steps
+        # number of terms for approximation
         @i 10 <
     do
         @i 2 * 1 + dup

@@ -1,22 +1,24 @@
-1 $i
-50 $n
-while
-    @i @n <=
-do
-    "" $x
-    @i 3 % 0 == if
-        @x "fizz" + $x
+func fizzbuzz 2 lo hi
+    while
+        @lo @hi <=
+    do
+        "" $x
+        @lo 3 % 0 == if
+            @x "fizz" + $x
+        end
+        @lo 5 % 0 == if
+            @x "buzz" + $x
+        end
+        @lo 7 % 0 == if
+            @x "bazz" + $x
+        end
+        @x len 0 == if
+            @lo peek pop
+        else
+            @x peek pop
+        end
+        @lo 1 + $lo
     end
-    @i 5 % 0 == if
-        @x "buzz" + $x
-    end
-    @i 7 % 0 == if
-        @x "bazz" + $x
-    end
-    @x len 0 == if
-        @i peek pop
-    else
-        @x peek pop
-    end
-    @i 1 + $i
 end
+
+10 20 call fizzbuzz

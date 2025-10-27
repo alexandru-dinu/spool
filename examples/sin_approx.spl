@@ -1,5 +1,4 @@
-func factorial 1
-    $n
+func factorial 1 n
     1 $f
     1 $i
     while
@@ -12,12 +11,11 @@ func factorial 1
 end
 
 # taylor approx of sin(x)
-func sin 1
-    $x
+func sin 1 x
     0 $i
     0 $out
     while
-        # approximate for this many steps
+        # number of terms for approximation
         @i 10 <
     do
         @i 2 * 1 + dup

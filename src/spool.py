@@ -29,6 +29,69 @@ KEYWORDS = [
 ]
 
 
+def _try_numeric(x) -> Value | None:
+    try:
+        f = float(x)
+        i = int(f)
+        return i if i == f else f
+    except ValueError:
+        return None
+
+
+def _is_valid_ident(x: str) -> bool:
+    return x not in KEYWORDS and re.match(r"(?=_*[a-z])[a-z_]+", x)
+
+
+def _is_string(x: str) -> bool:
+    return x[0] in ('"', "'") and x[-1] == x[0]
+
+
+def _requires_block(tok: str) -> bool:
+    return tok in ["if", "while", "func"]
+
+
+def _collect_until(keyword: str, tokens: list[str], index: int) -> tuple[list[str], int]:
+    """Collect the block until the outermost `keyword`."""
+    i = index
+    block = []
+    level = 1  # 1 b/c we're in the process of parsing a block
+
+    while i < len(tokens):
+        if tokens[i] == keyword:
+            level -= 1
+            if level == 0:
+                return block, i
+            elif level < 0:
+                raise SpoolSyntaxError("Incorrect pairing of `end` instructions.")
+        elif _requires_block(tokens[i]):
+            level += 1
+
+        block.append(tokens[i])
+        i += 1
+
+    raise SpoolSyntaxError("Missing `end` keyword.")
+
+
+def _split_else(tokens: list[str]) -> tuple[list[str], list[str] | None]:
+    """Return block_true, block_else"""
+
+    i = 0
+    level = 1
+
+    while i < len(tokens):
+        if tokens[i] == "else":
+            level -= 1
+            if level == 0:
+                return tokens[:i], tokens[i + 1 :]
+        elif _requires_block(tokens[i]):
+            level += 1
+
+        i += 1
+
+    # no "else"
+    return tokens, None
+
+
 class SpoolSyntaxError(Exception):
     pass
 
@@ -45,70 +108,7 @@ class Spool:
     def __init__(self):
         self.stack: list[Value] = []
         self.global_vars: dict[str, Value] = {}
-        self.funcs: dict[str, tuple[int, list[str]]] = {}  # name -> (arity, body)
-
-    @staticmethod
-    def _try_numeric(x) -> Value | None:
-        try:
-            f = float(x)
-            i = int(f)
-            return i if i == f else f
-        except ValueError:
-            return None
-
-    @staticmethod
-    def _is_valid_ident(x: str) -> bool:
-        return x not in KEYWORDS and re.match(r"(?=_*[a-z])[a-z_]+", x)
-
-    @staticmethod
-    def _is_string(x: str) -> bool:
-        return x[0] in ('"', "'") and x[-1] == x[0]
-
-    @staticmethod
-    def _requires_block(tok: str) -> bool:
-        return tok in ["if", "while", "func"]
-
-    @staticmethod
-    def _collect_until(keyword: str, tokens: list[str], index: int) -> tuple[list[str], int]:
-        """Collect the block until the outermost `keyword`."""
-        i = index
-        block = []
-        level = 1  # 1 b/c we're in the process of parsing a block
-
-        while i < len(tokens):
-            if tokens[i] == keyword:
-                level -= 1
-                if level == 0:
-                    return block, i
-                elif level < 0:
-                    raise SpoolSyntaxError("Incorrect pairing of `end` instructions.")
-            elif Spool._requires_block(tokens[i]):
-                level += 1
-
-            block.append(tokens[i])
-            i += 1
-
-        raise SpoolSyntaxError("Missing `end` keyword.")
-
-    @staticmethod
-    def _split_else(tokens: list[str]) -> tuple[list[str], list[str] | None]:
-        """Return block_true, block_else"""
-
-        i = 0
-        level = 1
-
-        while i < len(tokens):
-            if tokens[i] == "else":
-                level -= 1
-                if level == 0:
-                    return tokens[:i], tokens[i + 1 :]
-            elif Spool._requires_block(tokens[i]):
-                level += 1
-
-            i += 1
-
-        # no "else"
-        return tokens, None
+        self.funcs: dict[str, tuple[list[str], list[str]]] = {}  # name -> (args, body)
 
     def parse(self, prog: str) -> list[str]:
         toks = []
@@ -125,10 +125,10 @@ class Spool:
             tok = tokens[pc]
 
             match tok:
-                case _ if Spool._is_string(tok):
+                case _ if _is_string(tok):
                     self.stack.append(tok.strip(tok[0]))
 
-                case _ if (num := Spool._try_numeric(tok)) is not None:
+                case _ if (num := _try_numeric(tok)) is not None:
                     self.stack.append(num)
 
                 case (
@@ -197,7 +197,7 @@ class Spool:
                     v = _set[1:]
                     if not v:
                         raise SpoolSyntaxError("No identifier to set. Syntax is: `$foo`.")
-                    if not Spool._is_valid_ident(v):
+                    if not _is_valid_ident(v):
                         raise SpoolSyntaxError(f"Invalid identifier name `{v}`.")
                     if not self.stack:
                         raise SpoolStackError("Stack is empty.")
@@ -208,7 +208,7 @@ class Spool:
                     v = _get[1:]
                     if not v:
                         raise SpoolSyntaxError("No identifier to get. Syntax is: `@foo`.")
-                    if not Spool._is_valid_ident(v):
+                    if not _is_valid_ident(v):
                         raise SpoolSyntaxError(f"Invalid identifier name `{v}`.")
                     if v not in ctx_vars:
                         raise SpoolVarsError(f"Variable `{v}` is not defined.")
@@ -219,8 +219,8 @@ class Spool:
                     if not self.stack:
                         raise SpoolStackError("Stack is empty.")
 
-                    block, pc_end = Spool._collect_until(keyword="end", tokens=tokens, index=pc + 1)
-                    block_true, block_else = Spool._split_else(block)
+                    block, pc_end = _collect_until(keyword="end", tokens=tokens, index=pc + 1)
+                    block_true, block_else = _split_else(block)
 
                     # condition is the last thing on the stack
                     if self.stack.pop():
@@ -232,10 +232,8 @@ class Spool:
 
                 case "while":
                     # while <cond> do <body> end
-                    block_cond, pc_do = Spool._collect_until(
-                        keyword="do", tokens=tokens, index=pc + 1
-                    )
-                    block_body, pc_end = Spool._collect_until(
+                    block_cond, pc_do = _collect_until(keyword="do", tokens=tokens, index=pc + 1)
+                    block_body, pc_end = _collect_until(
                         keyword="end", tokens=tokens, index=pc_do + 1
                     )
 
@@ -248,9 +246,9 @@ class Spool:
                     pc = pc_end
 
                 case "func":
-                    # func <name> <arity> <body> end
+                    # func <name> <arity:N> <arg1>..<argN> <body> end
                     name = tokens[pc + 1]
-                    if not Spool._is_valid_ident(name):
+                    if not _is_valid_ident(name):
                         raise SpoolSyntaxError(f"Invalid function name `{name}`.")
 
                     try:
@@ -259,25 +257,36 @@ class Spool:
                     except (ValueError, AssertionError) as e:
                         raise SpoolSyntaxError("Function arity must be an integer >= 0.") from e
 
-                    body, pc_end = Spool._collect_until(keyword="end", tokens=tokens, index=pc + 3)
-                    self.funcs[name] = (arity, body)
+                    # collect `arity` args
+                    args = tokens[pc + 3 : pc + 3 + arity]
+                    assert all(_is_valid_ident(a) for a in args)
+
+                    # collect body
+                    body, pc_end = _collect_until(
+                        keyword="end", tokens=tokens, index=pc + 3 + arity
+                    )
+                    self.funcs[name] = (args, body)
                     pc = pc_end
 
                 case "call":
                     # <arg1> .. <argN> call <name>
                     name = tokens[pc + 1]
-                    if not Spool._is_valid_ident(name):
+                    if not _is_valid_ident(name):
                         raise SpoolSyntaxError(f"Invalid function name `{name}`.")
                     if name not in self.funcs:
                         raise SpoolVarsError(f"Function `{name}` is not defined.")
 
-                    arity, func_body = self.funcs[name]
+                    args, func_body = self.funcs[name]
+                    arity = len(args)
                     if (_n := len(self.stack)) < arity:
                         raise SpoolStackError(
                             f"Insufficient number of args for function `{name}`. Expected {arity} got {_n}."
                         )
 
-                    yield from self._run(func_body, ctx_vars={})
+                    # prepopulate the ctx with `arity` values from the stack into the given names
+                    yield from self._run(
+                        func_body, ctx_vars={arg: self.stack.pop() for arg in args[::-1]}
+                    )
                     pc += 1
 
                 # strings ops
@@ -342,7 +351,7 @@ class Spool:
             pc += 1
 
 
-# TODO: func args & arity: having #(set) == func's arity
+# TODO: tests for expected errors
 # TODO: lists
 # TODO: errors (... @ index ...)
 # TODO: tracebacks (pass context around?)

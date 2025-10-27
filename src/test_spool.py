@@ -233,12 +233,12 @@ def test_func():
     s = Spool()
     prog = jinja2.Environment().from_string(
         """\
-        func halve 1
-            2 /
+        func halve 1 x
+            @x 2 /
         end
 
-        func collatz_once 1
-            dup $x
+        func collatz_once 1 x
+            @x dup
             2 % 0 == if
                 @x call halve
             else
@@ -246,8 +246,8 @@ def test_func():
             end
         end
 
-        func collatz_seq 1
-            dup $x peek
+        func collatz_seq 1 x
+            @x dup peek
             while
                 @x 1 >
             do
