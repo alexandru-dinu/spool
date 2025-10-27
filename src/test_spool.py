@@ -1,6 +1,5 @@
 from pathlib import Path
 
-import jinja2
 import pytest
 
 from spool import Spool
@@ -229,39 +228,7 @@ def test_fizzbuzz():
     ]
 
 
-def test_func():
-    s = Spool()
-    prog = jinja2.Environment().from_string(
-        """\
-        func halve 1 x
-            @x 2 /
-        end
-
-        func collatz_once 1 x
-            @x dup
-            2 % 0 == if
-                @x call halve
-            else
-                @x 3 * 1 +
-            end
-        end
-
-        func collatz_seq 1 x
-            @x dup peek
-            while
-                @x 1 >
-            do
-                call collatz_once
-                dup $x
-                peek
-            end
-            pop
-        end
-
-        {{ arg }} call collatz_seq
-        """
-    )
-
+def test_func(examples_root):
     def _co(n):
         return 3 * n + 1 if n % 2 else n // 2
 
@@ -272,14 +239,14 @@ def test_func():
         yield from _cs(_co(n))
 
     for arg in [5, 27, 91, 871, 6171]:
-        assert list(s.execute(prog.render(arg=arg))) == list(_cs(arg))
+        prog = (
+            (examples_root / "collatz.spl")
+            .read_text()
+            .replace("5 call collatz_seq", f"{arg} call collatz_seq")
+        )
+        assert list(Spool().execute(prog)) == list(_cs(arg))
 
 
 def test_sin_approx(examples_root):
     out = Spool().execute((examples_root / "sin_approx.spl").read_text())
     assert list(out) == [0, 0.5, 0.707, 0.866, 1]
-
-
-if __name__ == "__main__":
-    # test_strings()
-    test_fizzbuzz()

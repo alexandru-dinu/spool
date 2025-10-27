@@ -48,8 +48,7 @@ uv run src/spool.py examples/collatz.spl
 <!-- MDUP:BEG (CMD:cat examples/collatz.spl) -->
 ```
 func collatz_once 1 x
-    @x dup
-    2 % 0 == if
+    @x 2 % 0 == if
         @x 2 //
     else
         @x 3 * 1 +
@@ -57,13 +56,11 @@ func collatz_once 1 x
 end
 
 func collatz_seq 1 x
-    @x dup peek
+    @x peek
     while
         @x 1 >
     do
-        call collatz_once
-        dup $x
-        peek
+        @x call collatz_once peek $x
     end
     pop
 end
