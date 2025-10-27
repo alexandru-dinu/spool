@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from spool import Spool
+from spool import SpoolAST, SpoolEval
 
 
 @pytest.fixture
@@ -11,9 +11,7 @@ def examples_root():
 
 
 def test_arithmetic():
-    s = Spool()
-    out = s.execute(
-        """\
+    prog = """\
         2 3 +
         peek
         7 10 -
@@ -26,14 +24,12 @@ def test_arithmetic():
         1 2 3
         dump
         """
-    )
+    out = SpoolEval(SpoolAST(prog)).evaluate()
     assert list(out) == [5, -3, [5, -3], 2, [1, 2, 3]]
 
 
 def test_vars():
-    s = Spool()
-    out = s.execute(
-        """\
+    prog = """\
         10 $x
         23 $y
         @x
@@ -46,14 +42,12 @@ def test_vars():
         @y 17 / round 5
         peek
         """
-    )
+    out = SpoolEval(SpoolAST(prog)).evaluate()
     assert list(out) == [230, None, {"x": 10, "y": 23, "z": 230}, round(23 / 17, 5)]
 
 
 def test_if_else():
-    s = Spool()
-    out = s.execute(
-        """\
+    prog = """\
         -7 $z
         42 20 > if
             10 $x
@@ -76,7 +70,7 @@ def test_if_else():
         @z
         vars
         """
-    )
+    out = SpoolEval(SpoolAST(prog)).evaluate()
     assert list(out) == [
         10,
         20,
@@ -86,9 +80,7 @@ def test_if_else():
 
 
 def test_while():
-    s = Spool()
-    out = s.execute(
-        """\
+    prog = """\
         0 $i
         10 $n
         while
@@ -100,14 +92,12 @@ def test_while():
             @i 1 + $i
         end
         """
-    )
+    out = SpoolEval(SpoolAST(prog)).evaluate()
     assert list(out) == list(range(1, 10, 2))
 
 
 def test_nested_while():
-    s = Spool()
-    out = s.execute(
-        """\
+    prog = """\
         1 $i
         5 $n
         while
@@ -123,14 +113,12 @@ def test_nested_while():
             @i 1 + $i
         end
         """
-    )
+    out = SpoolEval(SpoolAST(prog)).evaluate()
     assert list(out) == sum([list(range(1, n + 1)) for n in range(1, 5 + 1)], [])
 
 
 def test_strings():
-    s = Spool()
-    out = s.execute(
-        """\
+    prog = """\
         "foo" $x
         "bar" $y
         @x @y + dup $z peek
@@ -145,16 +133,14 @@ def test_strings():
             @i 1 + $i
         end
         """
-    )
-    assert list(out) == ["foobar", 6, "f", "o", "o", "b", "a", "r"]
+    s = SpoolEval(SpoolAST(prog))
+    assert list(s.evaluate()) == ["foobar", 6, "f", "o", "o", "b", "a", "r"]
     assert s.global_vars == {"x": "foo", "y": "bar", "z": "foobar", "i": 6, "n": 6}
 
 
 def test_fizzbuzz():
     # uglier impl. but shows nesting
-    s = Spool()
-    out = s.execute(
-        """\
+    prog = """\
         1 $i
         20 $n
         while
@@ -176,13 +162,11 @@ def test_fizzbuzz():
             @i 1 + $i
         end
         """
-    )
+    out = SpoolEval(SpoolAST(prog)).evaluate()
     assert list(out) == [1, 2, -3, 4, -5, -3, 7, 8, -3, -5, 11, -3, 13, 14, -15, 16, 17, -3, 19, -5]
 
     # cleaner impl. with strings
-    s = Spool()
-    out = s.execute(
-        """\
+    prog = """\
         1 $i
         20 $n
         while
@@ -203,7 +187,7 @@ def test_fizzbuzz():
             @i 1 + $i
         end
         """
-    )
+    out = SpoolEval(SpoolAST(prog)).evaluate()
     assert list(out) == [
         1,
         2,
@@ -239,14 +223,12 @@ def test_func(examples_root):
         yield from _cs(_co(n))
 
     for arg in [5, 27, 91, 871, 6171]:
-        prog = (
-            (examples_root / "collatz.spl")
-            .read_text()
-            .replace("5 call collatz_seq", f"{arg} call collatz_seq")
-        )
-        assert list(Spool().execute(prog)) == list(_cs(arg))
+        prog = (examples_root / "collatz.spl").read_text().replace("5 call collatz_seq", f"{arg} call collatz_seq")
+        out = SpoolEval(SpoolAST(prog)).evaluate()
+        assert list(out) == list(_cs(arg))
 
 
 def test_sin_approx(examples_root):
-    out = Spool().execute((examples_root / "sin_approx.spl").read_text())
+    prog = (examples_root / "sin_approx.spl").read_text()
+    out = SpoolEval(SpoolAST(prog)).evaluate()
     assert list(out) == [0, 0.5, 0.707, 0.866, 1]
