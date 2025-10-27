@@ -20,8 +20,8 @@ The project is experimental and work in progress.
 - inline comments
 
 ### TODOs
-<!-- MDUP:BEG (CMD:cat TODO.md) -->
-```
+<!-- MDUP:BEG (SRC:./TODO.md) -->
+```md
 - Nodes for each value type
 - Add loc info for error reporting
 - Type classes for each type: int, float, str
