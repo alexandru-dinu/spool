@@ -7,7 +7,8 @@
 
 *Spool* is a simple, stack-based programming language.
 The name was born from the literal `StackPL`; I then decided to use the `.spl` extension, which sounds like "spool".
-The project is work in progress.
+
+The project is experimental and work in progress.
 
 ## Features
 - types: int / float / str
@@ -34,7 +35,11 @@ The project is work in progress.
 
 ## Usage
 The project uses [`uv`](https://docs.astral.sh/uv/) which I highly recommend for managing Python environments and dependencies.
+
 ```sh
+git clone https://github.com/alexandru-dinu/spool.git
+cd spool
+uv sync
 uv run src/spool.py examples/collatz.spl
 ```
 
