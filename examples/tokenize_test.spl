@@ -1,8 +1,9 @@
+   1 2 + pop
 # checking the correctness of the tokenizer "hax hax"
 func noop do end # no args, no body
 call noop
 "a" "_" + "b" + peek pop
-"a b" peek pop
+"a b"       peek          pop # tabs should work, too
 1 2 + pop "xy zt" "  " + "pq" + peek pop
 "abc d ef"#comment w/o space
 
@@ -20,7 +21,4 @@ do
 end
 
 1 2 3 call mymy
-dump
-
-
-
+dump#end

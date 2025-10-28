@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from spool import SpoolAST, SpoolInterpreter, SpoolTokenizer, spool
+from spool import SpoolAST, SpoolInterpreter, SpoolSyntaxError, SpoolTokenizer, spool
 
 
 @pytest.fixture
@@ -228,3 +228,9 @@ def test_sin_approx(examples_root):
 def test_tokenizer(examples_root):
     prog = (examples_root / "tokenize_test.spl").read_text()
     assert list(spool(prog)) == ["a_b", "a b", "xy zt  pq", "d", 690, [6]]
+
+    with pytest.raises(SpoolSyntaxError):
+        list(spool('1 2 +\n"unterminated'))
+
+    with pytest.raises(SpoolSyntaxError):
+        list(spool('"string1\nstring2"'))
