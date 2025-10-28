@@ -2,7 +2,6 @@
 Simple stack-based PL.
 """
 
-import re
 from argparse import ArgumentParser
 from collections.abc import Generator
 from dataclasses import dataclass
@@ -44,6 +43,7 @@ BINOPS = {
     "&&": lambda a, b: a and b,
     "||": lambda a, b: a or b,
 }
+RESERVED = set(KEYWORDS) | set(BINOPS) | {"!!"}
 
 
 class SpoolSyntaxError(Exception):
@@ -68,7 +68,7 @@ def try_numeric(x) -> Value | None:
 
 
 def is_valid_ident(x: str) -> bool:
-    return x not in KEYWORDS and re.match(r"(?=_*[a-z])[a-z_]+", x) is not None
+    return x not in RESERVED and x.isidentifier()
 
 
 def is_string(x: str) -> bool:
