@@ -247,23 +247,7 @@ class SpoolAST:
                 case _ if (num := try_numeric(tok)) is not None:
                     nodes.append(Push(num))
 
-                case _ if tok in (
-                    "+",
-                    "-",
-                    "*",
-                    "/",
-                    "//",
-                    "%",
-                    "**",
-                    "==",
-                    "<",
-                    "<=",
-                    ">",
-                    ">=",
-                    "&&",
-                    "||",
-                    "!!",  # str indexing
-                ):
+                case _ if tok in BINOPS.keys() | {"!!"}:
                     nodes.append(BinOp(tok))
 
                 case "round":
@@ -352,6 +336,8 @@ class SpoolAST:
                     nodes.append(Dup())
                 case "pop":
                     nodes.append(Pop())
+
+                # printing
                 case "peek":
                     nodes.append(Peek())
                 case "dump":
