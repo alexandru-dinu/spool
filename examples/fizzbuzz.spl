@@ -1,4 +1,5 @@
-func fizzbuzz 2 lo hi
+func fizzbuzz lo hi
+do
     while
         @lo @hi <=
     do

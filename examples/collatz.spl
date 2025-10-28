@@ -1,4 +1,5 @@
-func collatz_once 1 x
+func collatz_once x
+do
     @x 2 % 0 == if
         @x 2 //
     else
@@ -6,7 +7,8 @@ func collatz_once 1 x
     end
 end
 
-func collatz_seq 1 x
+func collatz_seq x
+do
     @x peek
     while
         @x 1 >

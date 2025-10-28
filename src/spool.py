@@ -338,23 +338,17 @@ class SpoolAST:
                     pc = pc_end
 
                 case "func":
-                    # func <name> <arity:N> <arg1>..<argN> <body> end
+                    # func <name> <arg1>..<argN> do <body> end
                     name = tokens[pc + 1]
                     if not is_valid_ident(name):
                         raise SpoolSyntaxError(f"Invalid function name `{name}`.")
 
-                    try:
-                        arity = int(tokens[pc + 2])
-                        assert arity >= 0
-                    except (ValueError, AssertionError) as e:
-                        raise SpoolSyntaxError("Function arity must be an integer >= 0.") from e
-
-                    # collect `arity` args
-                    args = tokens[pc + 3 : pc + 3 + arity]
+                    # collect args
+                    args, pc_do = collect_until(keyword="do", tokens=tokens, index=pc + 2)
                     assert all(is_valid_ident(a) for a in args)
 
                     # collect body
-                    body, pc_end = collect_until(keyword="end", tokens=tokens, index=pc + 3 + arity)
+                    body, pc_end = collect_until(keyword="end", tokens=tokens, index=pc_do + 1)
 
                     nodes.append(Func(name=name, args=args, body=self.parse(body)))
 

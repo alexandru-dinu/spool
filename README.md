@@ -51,7 +51,8 @@ uv run src/spool.py examples/collatz.spl
 ### Collatz sequence
 <!-- MDUP:BEG (CMD:cat examples/collatz.spl) -->
 ```
-func collatz_once 1 x
+func collatz_once x
+do
     @x 2 % 0 == if
         @x 2 //
     else
@@ -59,7 +60,8 @@ func collatz_once 1 x
     end
 end
 
-func collatz_seq 1 x
+func collatz_seq x
+do
     @x peek
     while
         @x 1 >
@@ -76,7 +78,8 @@ end
 ### FizzBuzz
 <!-- MDUP:BEG (CMD:cat examples/fizzbuzz.spl) -->
 ```
-func fizzbuzz 2 lo hi
+func fizzbuzz lo hi
+do
     while
         @lo @hi <=
     do
@@ -106,7 +109,8 @@ end
 ### sin Taylor approximation
 <!-- MDUP:BEG (CMD:cat examples/sin_approx.spl) -->
 ```
-func factorial 1 n
+func factorial n
+do
     1 $f
     1 $i
     while
@@ -119,7 +123,8 @@ func factorial 1 n
 end
 
 # taylor approx of sin(x)
-func sin 1 x
+func sin x
+do
     0 $i
     0 $out
     while
