@@ -13,21 +13,21 @@ The project is experimental and work in progress.
 ## Features
 - types: int / float / str
 - variables: get (`@foo`) and set (`$bar`)
-- string manipulation: len, indexing
-- if/else
-- functions: `func <name> <arity:N> <arg1>..<argN> <body> end`
-- while loops
-- inline comments
-- `"strings"`
+- `"strings"` and string manipulation: len, indexing
+- if, if/else: `<cond> if <true> [else <false>] <end>`
+- functions: `func <name> <arg1>..<argN> do <body> end`
+- while loops: `while <cond> do <body> end`
+- `# inline comments`
 
 ### TODOs
 <!-- MDUP:BEG (SRC:./TODO.md) -->
 ```md
+- for loops
+- Arrays
 - Nodes for each value type
 - Add loc info for error reporting
 - Type classes for each type: int, float, str
 - Tests for expected errors
-- Lists
 - Errors (... @ index ...)
 - Tracebacks (pass context around?)
 - "Did you mean?" for errors
