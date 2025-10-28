@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from spool import SpoolAST, SpoolInterpreter, spool
+from spool import SpoolAST, SpoolInterpreter, SpoolTokenizer, spool
 
 
 @pytest.fixture
@@ -128,7 +128,7 @@ def test_strings():
             @i 1 + $i
         end
         """
-    s = SpoolInterpreter(SpoolAST(prog))
+    s = SpoolInterpreter(SpoolAST(SpoolTokenizer(prog).tokenize()))
     assert list(s.run()) == ["foobar", 6, "f", "o", "o", "b", "a", "r"]
     assert s.global_vars == {"x": "foo", "y": "bar", "z": "foobar", "i": 6, "n": 6}
 

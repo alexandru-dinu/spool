@@ -215,26 +215,31 @@ class Vars(Node):
     pass
 
 
-class SpoolAST:
+class SpoolTokenizer:
     def __init__(self, prog: str):
-        self.root: Block = self._parse(self._tokenize(prog))
+        self.prog = prog
+
+    def tokenize(self) -> list[str]:
+        """
+        Tokenize `prog`. Mainly: removing comments.
+        """
+        toks = []
+        for line in self.prog.splitlines():
+            # <code>#<comment>
+            toks += line.split("#", maxsplit=1)[0].strip().split()
+        return toks
+
+
+class SpoolAST:
+    def __init__(self, tokens: list[str]):
+        self.root = self.parse(tokens)
 
     def __str__(self) -> str:
         return str(self.root)
 
     __repr__ = __str__
 
-    def _tokenize(self, prog: str) -> list[str]:
-        """
-        Tokenize `prog`. Mainly: removing comments.
-        """
-        toks = []
-        for line in prog.splitlines():
-            # <code>#<comment>
-            toks += line.split("#", maxsplit=1)[0].strip().split()
-        return toks
-
-    def _parse(self, tokens: list[str], pc: int = 0) -> Block:
+    def parse(self, tokens: list[str], pc: int = 0) -> Block:
         nodes = []
 
         while pc < len(tokens):
@@ -282,8 +287,8 @@ class SpoolAST:
                     true_block, else_block = split_else(block)
                     nodes.append(
                         If(
-                            true_block=self._parse(true_block),
-                            else_block=self._parse(else_block) if else_block else None,
+                            true_block=self.parse(true_block),
+                            else_block=self.parse(else_block) if else_block else None,
                         )
                     )
                     pc = pc_end
@@ -292,7 +297,7 @@ class SpoolAST:
                     # while <cond> do <body> end
                     block_cond, pc_do = collect_until(keyword="do", tokens=tokens, index=pc + 1)
                     block_body, pc_end = collect_until(keyword="end", tokens=tokens, index=pc_do + 1)
-                    nodes.append(While(cond=self._parse(block_cond), body=self._parse(block_body)))
+                    nodes.append(While(cond=self.parse(block_cond), body=self.parse(block_body)))
                     pc = pc_end
 
                 case "func":
@@ -314,7 +319,7 @@ class SpoolAST:
                     # collect body
                     body, pc_end = collect_until(keyword="end", tokens=tokens, index=pc + 3 + arity)
 
-                    nodes.append(Func(name=name, args=args, body=self._parse(body)))
+                    nodes.append(Func(name=name, args=args, body=self.parse(body)))
 
                     pc = pc_end
 
@@ -474,7 +479,8 @@ class SpoolInterpreter:
 
 def spool(prog: str) -> Generator:
     """Wrapper for convenience"""
-    ast = SpoolAST(prog)
+    tokens = SpoolTokenizer(prog).tokenize()
+    ast = SpoolAST(tokens)
     out = SpoolInterpreter(ast).run()
     return out
 
