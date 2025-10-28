@@ -1,0 +1,8 @@
+# checking the correctness of the tokenizer
+"a" "_" + "b" + peek pop
+"a b" peek pop
+1 2 + pop "xy zt" "  " + "pq" + peek pop
+"abc d ef"#comment w/o space
+4#another
+!! peek pop
+34 35 + 10 * peek

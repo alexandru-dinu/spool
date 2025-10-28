@@ -223,3 +223,8 @@ def test_func(examples_root):
 def test_sin_approx(examples_root):
     prog = (examples_root / "sin_approx.spl").read_text()
     assert list(spool(prog)) == [0, 0.5, 0.707, 0.866, 1]
+
+
+def test_tokenizer(examples_root):
+    prog = (examples_root / "tokenize_test.spl").read_text()
+    assert list(spool(prog)) == ["a_b", "a b", "xy zt  pq", "d", 690]

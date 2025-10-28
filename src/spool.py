@@ -72,7 +72,7 @@ def is_valid_ident(x: str) -> bool:
 
 
 def is_string(x: str) -> bool:
-    return x[0] in ('"', "'") and x[-1] == x[0]
+    return x[0] == x[-1] == '"'
 
 
 def requires_block(tok: str) -> bool:
@@ -220,14 +220,51 @@ class SpoolTokenizer:
         self.prog = prog
 
     def tokenize(self) -> list[str]:
-        """
-        Tokenize `prog`. Mainly: removing comments.
-        """
-        toks = []
-        for line in self.prog.splitlines():
-            # <code>#<comment>
-            toks += line.split("#", maxsplit=1)[0].strip().split()
-        return toks
+        return list(self.__tok())
+
+    def __tok(self) -> Generator:
+        """Tokenize the program."""
+        cur = ""
+        i = 0
+        while i < len(self.prog):
+            c = self.prog[i]
+            # TODO: need `takewhile`
+
+            match c:
+                case _ if c.isspace():
+                    i += 1
+                    if cur:
+                        yield cur
+                        cur = ""
+                    else:
+                        continue
+
+                # comments are inline, so when `#` is first encountered, skip until end of line `\n`
+                case "#":
+                    if cur:
+                        yield cur
+                        cur = ""
+                    if (end := self.prog.find("\n", i)) != -1:
+                        i = end + 1
+                    else:  # if no `\n` found, then we must be at the end of prog
+                        break
+
+                case '"':
+                    # TODO: should allow multi-line strings
+                    end = self.prog.find('"', i + 1)  # +1 to discard finding the current `"` at `i`
+                    if (end == -1) or "\n" in self.prog[i:end]:
+                        raise SpoolSyntaxError("Unterminated string literal.")
+                    yield self.prog[i : end + 1]  # include quotes in the token
+                    i = end + 1
+
+                case _:
+                    # TODO: should we account for constructs w/o spaces, e.g. `34 35+10* peek`?
+                    cur += c
+                    i += 1
+
+        # right at the end of the prog
+        if cur:
+            yield cur
 
 
 class SpoolAST:

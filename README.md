@@ -18,6 +18,7 @@ The project is experimental and work in progress.
 - functions: `func <name> <arity:N> <arg1>..<argN> <body> end`
 - while loops
 - inline comments
+- `"strings"`
 
 ### TODOs
 <!-- MDUP:BEG (SRC:./TODO.md) -->
