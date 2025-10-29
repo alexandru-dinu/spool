@@ -2,7 +2,7 @@
 Simple stack-based PL.
 """
 
-# TODO: for loops
+# TODO: attach loc info to AST nodes and do proper error reporting
 # TODO: arrays
 # TODO: typing: value for each type, errors, ...
 # TODO: tests for expected errors
@@ -99,7 +99,7 @@ def is_string(x: str) -> bool:
 
 
 def requires_block(tok: Token) -> bool:
-    return tok.val in ["if", "while", "func"]
+    return tok.val in ["func", "if", "while", "for"]
 
 
 def collect_until(keyword: str, tokens: list[Token], index: int) -> tuple[list[Token], int]:
@@ -201,6 +201,12 @@ class If(Node):
 @dataclass
 class While(Node):
     cond: Block
+    body: Block
+
+
+@dataclass
+class For(Node):
+    index: str
     body: Block
 
 
@@ -372,6 +378,20 @@ class SpoolAST:
                     nodes.append(While(cond=self.parse(block_cond), body=self.parse(block_body)))
                     pc = pc_end
 
+                case "for":
+                    # <start> <stop> <inc> for <index> do <body> end
+                    indices, pc_do = collect_until(keyword="do", tokens=tokens, index=pc + 1)
+                    assert len(indices) == 1  # NOTE: temporary
+                    index = indices[0]
+                    if not is_valid_ident(index.val):
+                        raise SpoolSyntaxError(f"{index.line}:{index.col}: Invalid identifier name `{index.val}`.")
+
+                    block, pc_end = collect_until(keyword="end", tokens=tokens, index=pc_do + 1)
+
+                    nodes.append(For(index=index.val, body=self.parse(block)))
+
+                    pc = pc_end
+
                 case "func":
                     # func <name> <arg1>..<argN> do <body> end
                     name = tokens[pc + 1].val
@@ -492,6 +512,20 @@ class SpoolInterpreter:
                         yield from self.__run(cond, ctx_vars=ctx_vars)
                         if not self.stack.pop():
                             break
+                        yield from self.__run(body, ctx_vars=ctx_vars)
+
+                case For(index, body):
+                    if (_n := len(self.stack)) < 3:
+                        raise SpoolStackError(
+                            f"For expects 3 values on the stack: <start> <end> <inc>, but stack size = {_n}."
+                        )
+                    if not all(isinstance(x, int) for x in self.stack[-3:]):
+                        raise SpoolStackError("For expects <start> <end> <inc> all of type int.")
+
+                    inc, end, start = self.stack.pop(), self.stack.pop(), self.stack.pop()
+                    for i in range(start, end, inc):  # type: ignore
+                        # inject index var into context
+                        ctx_vars[index] = i
                         yield from self.__run(body, ctx_vars=ctx_vars)
 
                 case Func(name, args, body):

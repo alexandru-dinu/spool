@@ -1,12 +1,9 @@
 func factorial n
 do
     1 $f
-    1 $i
-    while
-        @i @n <=
+    1 @n 1 + 1 for i
     do
         @f @i * $f
-        @i 1 + $i
     end
     @f
 end
@@ -14,18 +11,14 @@ end
 # taylor approx of sin(x)
 func sin x
 do
-    0 $i
     0 $out
-    while
-        # number of terms for approximation
-        @i 10 <
+    0 10 1 for i # approx terms
     do
         @i 2 * 1 + dup
         @x swap ** $num
         call factorial $den
         -1 @i ** $sign
         @num @den / @sign * @out + $out
-        @i 1 + $i
     end
     @out
 end

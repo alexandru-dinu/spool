@@ -120,6 +120,23 @@ def test_nested_while():
     assert list(spool(prog)) == sum([list(range(1, n + 1)) for n in range(1, 5 + 1)], [])
 
 
+def test_for():
+    assert list(spool("1 100 1 for i do end peek")) == [None]
+
+    with pytest.raises(SpoolSyntaxError):
+        list(spool("1 100 1 for 123 do end peek"))
+
+    prog = """\
+        1 $start
+        5 $stop
+        @start @stop 1 for i do
+            @i peek
+        end
+        vars
+        """
+    assert list(spool(prog)) == [1, 2, 3, 4, {"start": 1, "stop": 5, "i": 4}]
+
+
 def test_strings():
     prog = """\
         "foo" $x

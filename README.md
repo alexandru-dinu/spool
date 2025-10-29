@@ -17,12 +17,13 @@ The project is experimental and work in progress.
 - if, if/else: `<cond> if <true> [else <false>] <end>`
 - functions: `func <name> <arg1>..<argN> do <body> end`
 - while loops: `while <cond> do <body> end`
+- for loops: `<start> <stop> <inc> for <index> do <body> end`
 - `# inline comments`
 
 ### TODOs
 <!-- MDUP:BEG (CMD:make list-todo) -->
 ```
-- for loops
+- attach loc info to AST nodes and do proper error reporting
 - arrays
 - typing: value for each type, errors, ...
 - tests for expected errors
@@ -114,12 +115,9 @@ end
 func factorial n
 do
     1 $f
-    1 $i
-    while
-        @i @n <=
+    1 @n 1 + 1 for i
     do
         @f @i * $f
-        @i 1 + $i
     end
     @f
 end
@@ -127,18 +125,14 @@ end
 # taylor approx of sin(x)
 func sin x
 do
-    0 $i
     0 $out
-    while
-        # number of terms for approximation
-        @i 10 <
+    0 10 1 for i # approx terms
     do
         @i 2 * 1 + dup
         @x swap ** $num
         call factorial $den
         -1 @i ** $sign
         @num @den / @sign * @out + $out
-        @i 1 + $i
     end
     @out
 end
