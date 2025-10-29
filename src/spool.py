@@ -3,11 +3,11 @@ Simple stack-based PL.
 """
 
 from argparse import ArgumentParser
-from collections.abc import Callable, Generator
+from collections.abc import Callable, Generator, Sized
 from dataclasses import dataclass
 from pathlib import Path
 
-type Value = float | int | str
+type Value = int | float | str
 
 KEYWORDS = [
     "call",
@@ -55,6 +55,7 @@ class SpoolStackError(Exception):
     pass
 
 
+# TODO: type error?
 class SpoolVarsError(Exception):
     pass
 
@@ -66,13 +67,14 @@ class Token:
     val: str
 
 
-def try_numeric(x) -> Value | None:
+def try_numeric(x) -> int | float | None:
     try:
         f = float(x)
         i = int(f)
-        return i if i == f else f
     except ValueError:
         return None
+    else:
+        return i if i == f else f
 
 
 def is_valid_ident(x: str) -> bool:
@@ -451,7 +453,10 @@ class SpoolInterpreter:
                 case Round(ndigits):
                     if not self.stack:
                         raise SpoolStackError("Stack is empty.")
-                    self.stack.append(round(self.stack.pop(), ndigits))
+                    x = self.stack.pop()
+                    if not isinstance(x, (int, float)):
+                        raise SpoolVarsError(f"Cannot apply `round` on value of type {type(x)}.")
+                    self.stack.append(round(x, ndigits))
 
                 case Set(var):
                     if not self.stack:
@@ -496,9 +501,10 @@ class SpoolInterpreter:
                 case Len():
                     if not self.stack:
                         raise SpoolStackError("Stack is empty.")
-                    if not isinstance(self.stack[-1], str):
-                        raise SpoolVarsError(f"Cannot apply `len` on value of type {type(self.stack[-1])}.")
-                    self.stack.append(len(self.stack.pop()))
+                    x = self.stack.pop()
+                    if not isinstance(x, Sized):
+                        raise SpoolVarsError(f"Cannot apply `len` on value of type {type(x)}.")
+                    self.stack.append(len(x))
 
                 case Swap():
                     # [..., a, b] becomes [..., b, a]

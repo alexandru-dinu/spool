@@ -1,6 +1,6 @@
 .PHONY: all
 all:
-	make format && make lint && make test && make refresh-readme
+	make format && make lint && make typecheck && make test && make refresh-readme
 
 .PHONY: test
 test:
