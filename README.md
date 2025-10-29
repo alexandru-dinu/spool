@@ -23,20 +23,19 @@ The project is experimental and work in progress.
 ### TODOs
 <!-- MDUP:BEG (CMD:make list-todo) -->
 ```
-- attach loc info to AST nodes and do proper error reporting
-- arrays
-- typing: value for each type, errors, ...
 - tests for expected errors
-- errors (... @ index ...)
+- attach loc info to AST nodes and do standardised error reporting: `filename:line:col: message`
+- base error class w/ ln,col info
+- typing: value for each type, errors, ...
+- arrays
+- impl rule110
 - tracebacks (pass context around?)
 - "did you mean?" for errors
-- highlighter for vim
-- library of utils
-- impl rule110
 - AST node for comments?
 - multi-line strings?
 - account for constructs w/o spaces, e.g. `34 35+10* peek`?
-- base error class w/ ln,col info
+- library of utils
+- highlighter for vim
 ```
 <!-- MDUP:END -->
 

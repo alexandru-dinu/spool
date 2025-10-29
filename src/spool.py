@@ -2,19 +2,19 @@
 Simple stack-based PL.
 """
 
-# TODO: attach loc info to AST nodes and do proper error reporting
-# TODO: arrays
-# TODO: typing: value for each type, errors, ...
 # TODO: tests for expected errors
-# TODO: errors (... @ index ...)
+# TODO: attach loc info to AST nodes and do standardised error reporting: `filename:line:col: message`
+# TODO: base error class w/ ln,col info
+# TODO: typing: value for each type, errors, ...
+# TODO: arrays
+# TODO: impl rule110
 # TODO: tracebacks (pass context around?)
 # TODO: "did you mean?" for errors
-# TODO: highlighter for vim
-# TODO: library of utils
-# TODO: impl rule110
 # TODO: AST node for comments?
 # TODO: multi-line strings?
 # TODO: account for constructs w/o spaces, e.g. `34 35+10* peek`?
+# TODO: library of utils
+# TODO: highlighter for vim
 
 from argparse import ArgumentParser
 from collections.abc import Callable, Generator, Sized
@@ -60,7 +60,6 @@ BINOPS = {
 RESERVED = set(KEYWORDS) | set(BINOPS) | {"!!"}
 
 
-# TODO: base error class w/ ln,col info
 class SpoolSyntaxError(Exception):
     pass
 
