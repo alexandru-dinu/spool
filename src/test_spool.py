@@ -1,8 +1,16 @@
+import textwrap
 from pathlib import Path
 
 import pytest
 
-from spool import SpoolAST, SpoolInterpreter, SpoolSyntaxError, SpoolTokenizer, spool
+from spool import (
+    SpoolAST,
+    SpoolInterpreter,
+    SpoolSyntaxError,
+    SpoolTokenizer,
+    Token,
+    spool,
+)
 
 
 @pytest.fixture
@@ -234,3 +242,29 @@ def test_tokenizer(examples_root):
 
     with pytest.raises(SpoolSyntaxError):
         list(spool('"string1\nstring2"'))
+
+
+def test_token_loc():
+    t = SpoolTokenizer(
+        textwrap.dedent(
+            """\
+            1 2 peek #line 1
+            -2.53 "hello world" 0.02
+            ### full line comment ###
+            \t\t $ws
+            dump
+            """
+        )
+    )
+    assert t.tokenize() == [
+        Token(line=1, col=1, val="1"),
+        Token(line=1, col=3, val="2"),
+        Token(line=1, col=5, val="peek"),
+        # Token(line=1, col=10, val="#line 1"),
+        Token(line=2, col=1, val="-2.53"),
+        Token(line=2, col=7, val='"hello world"'),
+        Token(line=2, col=21, val="0.02"),
+        # Token(line=3, col=1, val="### full line comment ###"),
+        Token(line=4, col=10, val="$ws"),
+        Token(line=5, col=1, val="dump"),
+    ]

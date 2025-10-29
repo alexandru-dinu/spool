@@ -2,12 +2,26 @@
 Simple stack-based PL.
 """
 
+# TODO: for loops
+# TODO: arrays
+# TODO: typing: value for each type, errors, ...
+# TODO: tests for expected errors
+# TODO: errors (... @ index ...)
+# TODO: tracebacks (pass context around?)
+# TODO: "did you mean?" for errors
+# TODO: highlighter for vim
+# TODO: library of utils
+# TODO: impl rule110
+# TODO: AST node for comments?
+# TODO: multi-line strings?
+# TODO: account for constructs w/o spaces, e.g. `34 35+10* peek`?
+
 from argparse import ArgumentParser
-from collections.abc import Generator
+from collections.abc import Callable, Generator, Sized
 from dataclasses import dataclass
 from pathlib import Path
 
-type Value = float | int | str
+type Value = int | float | str
 
 KEYWORDS = [
     "call",
@@ -46,6 +60,7 @@ BINOPS = {
 RESERVED = set(KEYWORDS) | set(BINOPS) | {"!!"}
 
 
+# TODO: base error class w/ ln,col info
 class SpoolSyntaxError(Exception):
     pass
 
@@ -58,13 +73,21 @@ class SpoolVarsError(Exception):
     pass
 
 
-def try_numeric(x) -> Value | None:
+@dataclass
+class Token:
+    line: int
+    col: int
+    val: str
+
+
+def try_numeric(x) -> int | float | None:
     try:
         f = float(x)
         i = int(f)
-        return i if i == f else f
     except ValueError:
         return None
+    else:
+        return i if i == f else f
 
 
 def is_valid_ident(x: str) -> bool:
@@ -75,18 +98,18 @@ def is_string(x: str) -> bool:
     return x[0] == x[-1] == '"'
 
 
-def requires_block(tok: str) -> bool:
-    return tok in ["if", "while", "func"]
+def requires_block(tok: Token) -> bool:
+    return tok.val in ["if", "while", "func"]
 
 
-def collect_until(keyword: str, tokens: list[str], index: int) -> tuple[list[str], int]:
+def collect_until(keyword: str, tokens: list[Token], index: int) -> tuple[list[Token], int]:
     """Collect the block until the outermost `keyword`."""
     i = index
-    block = []
+    block: list[Token] = []
     level = 1  # 1 b/c we're in the process of parsing a block
 
     while i < len(tokens):
-        if tokens[i] == keyword:
+        if tokens[i].val == keyword:
             level -= 1
             if level == 0:
                 return block, i
@@ -101,14 +124,14 @@ def collect_until(keyword: str, tokens: list[str], index: int) -> tuple[list[str
     raise SpoolSyntaxError("Missing `end` keyword.")
 
 
-def split_else(tokens: list[str]) -> tuple[list[str], list[str] | None]:
+def split_else(tokens: list[Token]) -> tuple[list[Token], list[Token] | None]:
     """Return block_true, block_else"""
 
     i = 0
     level = 1
 
     while i < len(tokens):
-        if tokens[i] == "else":
+        if tokens[i].val == "else":
             level -= 1
             if level == 0:
                 return tokens[:i], tokens[i + 1 :]
@@ -121,7 +144,7 @@ def split_else(tokens: list[str]) -> tuple[list[str], list[str] | None]:
     return tokens, None
 
 
-def itakewhile(pred: callable, xs: list[str]) -> tuple[list[str], int, bool]:
+def itakewhile(pred: Callable, xs: str) -> tuple[str, int, bool]:
     """
     Like `takewhile`, but also return the stopping index and whether end was reached.
     """
@@ -146,7 +169,7 @@ class Block(Node):
 
 @dataclass
 class Push(Node):
-    value: Value
+    val: Value
 
 
 @dataclass
@@ -232,44 +255,55 @@ class SpoolTokenizer:
     def __init__(self, prog: str):
         self.prog = prog
 
-    def tokenize(self) -> list[str]:
+    def tokenize(self) -> list[Token]:
         return list(self.__tok())
 
     def __tok(self) -> Generator:
-        """Tokenize the program."""
+        """Tokenize the program.
+        TODO: simplify!
+        """
+        line = col = 1
         i = 0
         while i < len(self.prog):
             c = self.prog[i]
 
             match c:
                 case _ if c.isspace():
-                    _, offset, _ = itakewhile(lambda x: x.isspace(), self.prog[i:])
+                    ws, offset, _ = itakewhile(lambda x: x.isspace(), self.prog[i:])
                     i += offset
+                    if "\n" in ws:
+                        line += ws.count("\n")
+                        col = 1
+                        ws = ws[-ws[::-1].index("\n") :]  # chars after last \n
+                    col += ws.count(" ") + ws.count("\t") * 4  # TODO: isn't this editor's job?
 
                 # comments are inline, so when `#` is first encountered, skip until end of line `\n`
                 case "#":
                     _, offset, _ = itakewhile(lambda x: x != "\n", self.prog[i:])
-                    i += offset
+                    i += offset + 1
+                    line += 1
+                    col = 1
 
                 case '"':
-                    # TODO: should we allow multi-line strings?
                     in_str, offset, is_end = itakewhile(lambda x: x != '"', self.prog[i + 1 :])
-                    if is_end or "\n" in in_str:
-                        raise SpoolSyntaxError("Unterminated string literal.")
 
-                    end = i + 1 + offset + 1
-                    yield self.prog[i:end]
+                    if is_end or "\n" in in_str:
+                        raise SpoolSyntaxError(f"Unterminated string literal @ (line={line}, col={col})")
+
+                    end = i + offset + 2
+                    yield Token(line=line, col=col, val=self.prog[i:end])
                     i = end
+                    col += offset + 2
 
                 case _:
-                    # TODO: should we account for constructs w/o spaces, e.g. `34 35+10* peek`?
                     cur, offset, _ = itakewhile(lambda x: not x.isspace() and x != "#" and x != '"', self.prog[i:])
                     i += offset
-                    yield cur
+                    yield Token(line=line, col=col, val=cur)
+                    col += len(cur)
 
 
 class SpoolAST:
-    def __init__(self, tokens: list[str]):
+    def __init__(self, tokens: list[Token]):
         self.root = self.parse(tokens)
 
     def __str__(self) -> str:
@@ -277,25 +311,25 @@ class SpoolAST:
 
     __repr__ = __str__
 
-    def parse(self, tokens: list[str], pc: int = 0) -> Block:
-        nodes = []
+    def parse(self, tokens: list[Token], pc: int = 0) -> Block:
+        nodes: list[Node] = []
 
         while pc < len(tokens):
             tok = tokens[pc]
 
-            match tok:
-                case _ if is_string(tok):
-                    nodes.append(Push(value=tok.strip(tok[0])))
+            match tok.val:
+                case _ if is_string(tok.val):
+                    nodes.append(Push(val=tok.val.strip(tok.val[0])))
 
-                case _ if (num := try_numeric(tok)) is not None:
+                case _ if (num := try_numeric(tok.val)) is not None:
                     nodes.append(Push(num))
 
-                case _ if tok in BINOPS.keys() | {"!!"}:
-                    nodes.append(BinOp(tok))
+                case _ if tok.val in BINOPS.keys() | {"!!"}:
+                    nodes.append(BinOp(tok.val))
 
                 case "round":
                     try:
-                        ndigits = int(tokens[pc + 1])
+                        ndigits = int(tokens[pc + 1].val)
                     except ValueError as e:
                         raise SpoolSyntaxError("round: `ndigits must be an integer.") from e
 
@@ -340,24 +374,26 @@ class SpoolAST:
 
                 case "func":
                     # func <name> <arg1>..<argN> do <body> end
-                    name = tokens[pc + 1]
+                    name = tokens[pc + 1].val
                     if not is_valid_ident(name):
                         raise SpoolSyntaxError(f"Invalid function name `{name}`.")
 
                     # collect args
                     args, pc_do = collect_until(keyword="do", tokens=tokens, index=pc + 2)
-                    assert all(is_valid_ident(a) for a in args)
+                    for a in args:
+                        if not is_valid_ident(a.val):
+                            raise SpoolSyntaxError(f"Invalid arg name `{a.val}` @ (line={a.line}, col={a.col})")
 
                     # collect body
                     body, pc_end = collect_until(keyword="end", tokens=tokens, index=pc_do + 1)
 
-                    nodes.append(Func(name=name, args=args, body=self.parse(body)))
+                    nodes.append(Func(name=name, args=[a.val for a in args], body=self.parse(body)))
 
                     pc = pc_end
 
                 case "call":
                     # <arg1> .. <argN> call <name>
-                    name = tokens[pc + 1]
+                    name = tokens[pc + 1].val
                     if not is_valid_ident(name):
                         raise SpoolSyntaxError(f"Invalid function name `{name}`.")
 
@@ -383,8 +419,8 @@ class SpoolAST:
                     nodes.append(Vars())
 
                 # errors
-                case other:
-                    raise SpoolSyntaxError(f"Invalid token `{other}` @ index {pc}.")
+                case _:
+                    raise SpoolSyntaxError(f"Invalid token {tok.val} @ (line={tok.line}, col={tok.col})")
 
             pc += 1
 
@@ -428,7 +464,10 @@ class SpoolInterpreter:
                 case Round(ndigits):
                     if not self.stack:
                         raise SpoolStackError("Stack is empty.")
-                    self.stack.append(round(self.stack.pop(), ndigits))
+                    x = self.stack.pop()
+                    if not isinstance(x, (int, float)):
+                        raise SpoolVarsError(f"Cannot apply `round` on value of type {type(x)}.")
+                    self.stack.append(round(x, ndigits))
 
                 case Set(var):
                     if not self.stack:
@@ -473,9 +512,10 @@ class SpoolInterpreter:
                 case Len():
                     if not self.stack:
                         raise SpoolStackError("Stack is empty.")
-                    if not isinstance(self.stack[-1], str):
-                        raise SpoolVarsError(f"Cannot apply `len` on value of type {type(self.stack[-1])}.")
-                    self.stack.append(len(self.stack.pop()))
+                    x = self.stack.pop()
+                    if not isinstance(x, Sized):
+                        raise SpoolVarsError(f"Cannot apply `len` on value of type {type(x)}.")
+                    self.stack.append(len(x))
 
                 case Swap():
                     # [..., a, b] becomes [..., b, a]

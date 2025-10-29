@@ -20,20 +20,22 @@ The project is experimental and work in progress.
 - `# inline comments`
 
 ### TODOs
-<!-- MDUP:BEG (SRC:./TODO.md) -->
-```md
+<!-- MDUP:BEG (CMD:make list-todo) -->
+```
 - for loops
-- Arrays
-- Nodes for each value type
-- Add loc info for error reporting
-- Type classes for each type: int, float, str
-- Tests for expected errors
-- Errors (... @ index ...)
-- Tracebacks (pass context around?)
-- "Did you mean?" for errors
-- Write highlighter for vim
-- Library of utils
-- Impl rule110
+- arrays
+- typing: value for each type, errors, ...
+- tests for expected errors
+- errors (... @ index ...)
+- tracebacks (pass context around?)
+- "did you mean?" for errors
+- highlighter for vim
+- library of utils
+- impl rule110
+- AST node for comments?
+- multi-line strings?
+- account for constructs w/o spaces, e.g. `34 35+10* peek`?
+- base error class w/ ln,col info
 ```
 <!-- MDUP:END -->
 
