@@ -20,5 +20,10 @@ format:
 		&& uv run isort src/*.py \
 		&& uv run black --line-length 120 src/*.py
 
+.PHONY: refresh-readme
 refresh-readme:
 	@uv tool run mdup -i README.md
+
+.PHONY: list-todo
+list-todo:
+	@rg -wNI "^# TODO:\s*(.*)" src/*.py -r '- $$1'

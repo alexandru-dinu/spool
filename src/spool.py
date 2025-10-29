@@ -2,6 +2,20 @@
 Simple stack-based PL.
 """
 
+# TODO: for loops
+# TODO: arrays
+# TODO: typing: value for each type, errors, ...
+# TODO: tests for expected errors
+# TODO: errors (... @ index ...)
+# TODO: tracebacks (pass context around?)
+# TODO: "did you mean?" for errors
+# TODO: highlighter for vim
+# TODO: library of utils
+# TODO: impl rule110
+# TODO: AST node for comments?
+# TODO: multi-line strings?
+# TODO: account for constructs w/o spaces, e.g. `34 35+10* peek`?
+
 from argparse import ArgumentParser
 from collections.abc import Callable, Generator, Sized
 from dataclasses import dataclass
@@ -55,7 +69,6 @@ class SpoolStackError(Exception):
     pass
 
 
-# TODO: type error?
 class SpoolVarsError(Exception):
     pass
 
@@ -272,7 +285,6 @@ class SpoolTokenizer:
                     col = 1
 
                 case '"':
-                    # TODO: should we allow multi-line strings?
                     in_str, offset, is_end = itakewhile(lambda x: x != '"', self.prog[i + 1 :])
 
                     if is_end or "\n" in in_str:
@@ -284,7 +296,6 @@ class SpoolTokenizer:
                     col += offset + 2
 
                 case _:
-                    # TODO: should we account for constructs w/o spaces, e.g. `34 35+10* peek`?
                     cur, offset, _ = itakewhile(lambda x: not x.isspace() and x != "#" and x != '"', self.prog[i:])
                     i += offset
                     yield Token(line=line, col=col, val=cur)
