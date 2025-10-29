@@ -228,6 +228,21 @@ def test_func(examples_root):
         assert list(spool(prog)) == list(_cs(arg))
 
 
+def test_func_scoping():
+    prog = """
+        1 $Gx 2 $Gy
+        func add a b do
+            @a @b +     # a, b are local to the func
+            -1 $Gx       # shadow global var
+            -2 $local
+            vars
+        end
+        10 20 call add
+        vars
+    """
+    assert list(spool(prog)) == [{"a": 10, "b": 20, "Gx": -1, "Gy": 2, "local": -2}, {"Gx": 1, "Gy": 2}]
+
+
 def test_sin_approx(examples_root):
     prog = (examples_root / "sin_approx.spl").read_text()
     assert list(spool(prog)) == [0, 0.5, 0.707, 0.866, 1]

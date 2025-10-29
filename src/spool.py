@@ -507,7 +507,9 @@ class SpoolInterpreter:
                             f"Insufficient number of args for function `{func}`. Expected {arity} got {_n}."
                         )
                     # prepopulate the ctx with `arity` values from the stack into the given names
-                    yield from self.__run(func_body, ctx_vars={arg: self.stack.pop() for arg in args[::-1]})
+                    yield from self.__run(
+                        func_body, ctx_vars=self.global_vars | {arg: self.stack.pop() for arg in args[::-1]}
+                    )
 
                 case Len():
                     if not self.stack:
