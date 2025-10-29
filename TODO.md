@@ -1,7 +1,6 @@
 - for loops
 - Arrays
 - Nodes for each value type
-- Add loc info for error reporting
 - Type classes for each type: int, float, str
 - Tests for expected errors
 - Errors (... @ index ...)
@@ -10,3 +9,4 @@
 - Write highlighter for vim
 - Library of utils
 - Impl rule110
+- AST node for comments?
