@@ -1,8 +1,9 @@
+- for loops
+- Arrays
 - Nodes for each value type
 - Add loc info for error reporting
 - Type classes for each type: int, float, str
 - Tests for expected errors
-- Lists
 - Errors (... @ index ...)
 - Tracebacks (pass context around?)
 - "Did you mean?" for errors
