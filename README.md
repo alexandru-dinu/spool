@@ -51,7 +51,13 @@ uv run spool examples/collatz.spl
 ```
 
 ## Examples
-### Collatz sequence
+### Hello, World!
+```
+# A classic
+"Hello, World!" peek
+```
+
+### Collatz Sequence
 <!-- MDUP:BEG (CMD:cat examples/collatz.spl) -->
 ```
 func collatz_once x
@@ -109,7 +115,7 @@ end
 ```
 <!-- MDUP:END -->
 
-### Sine Taylor approximation
+### Taylor Approximation of `sin`
 <!-- MDUP:BEG (CMD:cat examples/sin_approx.spl) -->
 ```
 func factorial n
