@@ -273,14 +273,16 @@ class SpoolTokenizer:
             c = self.prog[i]
 
             match c:
-                case _ if c.isspace():
-                    ws, offset, _ = itakewhile(lambda x: x.isspace(), self.prog[i:])
+                case "\n":
+                    _, offset, _ = itakewhile(lambda x: x == "\n", self.prog[i:])
                     i += offset
-                    if "\n" in ws:
-                        line += ws.count("\n")
-                        col = 1
-                        ws = ws[-ws[::-1].index("\n") :]  # chars after last \n
-                    col += ws.count(" ") + ws.count("\t") * 4  # TODO: isn't this editor's job?
+                    line += offset
+                    col = 1
+
+                case _ if c in " \t":
+                    _, offset, _ = itakewhile(lambda x: x in " \t", self.prog[i:])
+                    i += offset
+                    col += offset
 
                 # comments are inline, so when `#` is first encountered, skip until end of line `\n`
                 case "#":
@@ -290,9 +292,9 @@ class SpoolTokenizer:
                     col = 1
 
                 case '"':
-                    in_str, offset, is_end = itakewhile(lambda x: x != '"', self.prog[i + 1 :])
+                    in_str, offset, prog_end = itakewhile(lambda x: x != '"', self.prog[i + 1 :])
 
-                    if is_end or "\n" in in_str:
+                    if prog_end or "\n" in in_str:
                         raise SpoolSyntaxError(f"Unterminated string literal @ (line={line}, col={col})")
 
                     end = i + offset + 2

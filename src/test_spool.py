@@ -282,9 +282,10 @@ def test_token_loc():
         textwrap.dedent(
             """\
             1 2 peek #line 1
-            -2.53 "hello world" 0.02
+            -2.53 "hello world"\t0.02
             ### full line comment ###
-            \t\t $ws
+            \t\t $ws1
+            \t$ws2
             dump
             """
         )
@@ -298,8 +299,9 @@ def test_token_loc():
         Token(line=2, col=7, val='"hello world"'),
         Token(line=2, col=21, val="0.02"),
         # Token(line=3, col=1, val="### full line comment ###"),
-        Token(line=4, col=10, val="$ws"),
-        Token(line=5, col=1, val="dump"),
+        Token(line=4, col=4, val="$ws1"),
+        Token(line=5, col=2, val="$ws2"),
+        Token(line=6, col=1, val="dump"),
     ]
 
 
