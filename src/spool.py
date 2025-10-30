@@ -24,6 +24,7 @@ from pathlib import Path
 type Value = int | float | str
 
 KEYWORDS = [
+    "and",
     "call",
     "do",
     "dump",
@@ -34,6 +35,7 @@ KEYWORDS = [
     "func",
     "if",
     "len",
+    "or",
     "peek",
     "pop",
     "round",
@@ -54,8 +56,8 @@ BINOPS = {
     "<=": lambda a, b: a <= b,
     ">": lambda a, b: a > b,
     ">=": lambda a, b: a >= b,
-    "&&": lambda a, b: a and b,
-    "||": lambda a, b: a or b,
+    "and": lambda a, b: a and b,
+    "or": lambda a, b: a or b,
 }
 RESERVED = set(KEYWORDS) | set(BINOPS) | {"!!"}
 

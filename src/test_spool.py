@@ -19,6 +19,16 @@ def examples_root():
     return Path(__file__).resolve().parents[1] / "examples"
 
 
+def test_bool():
+    prog = """\
+        10 3 % 0 ==
+        10 5 % 0 ==
+        or peek
+        1 0 and peek
+        """
+    assert list(spool(prog)) == [True, False]
+
+
 def test_arithmetic():
     prog = """\
         2 3 +
@@ -167,7 +177,7 @@ def test_fizzbuzz():
         while
             @i @n <=
         do
-            @i 3 % 0 == @i 5 % 0 == && if
+            @i 3 % 0 == @i 5 % 0 == and if
                 -15 peek pop
             else
                 @i 3 % 0 == if
