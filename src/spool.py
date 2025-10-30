@@ -2,12 +2,12 @@
 Simple stack-based PL.
 """
 
+# TODO: arrays
+# TODO: impl rule110
 # TODO: tests for expected errors
 # TODO: attach loc info to AST nodes and do standardised error reporting: `filename:line:col: message`
 # TODO: base error class w/ ln,col info
 # TODO: typing: value for each type, errors, ...
-# TODO: arrays
-# TODO: impl rule110
 # TODO: tracebacks (pass context around?)
 # TODO: "did you mean?" for errors
 # TODO: AST node for comments?
@@ -594,10 +594,14 @@ def spool(prog: str) -> Generator:
     return out
 
 
-if __name__ == "__main__":
+def main():
     parser = ArgumentParser()
     parser.add_argument("file", type=Path)
     args = parser.parse_args()
 
     for o in spool(args.file.read_text()):
         print(o)
+
+
+if __name__ == "__main__":
+    main()

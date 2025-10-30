@@ -24,12 +24,12 @@ The project is experimental and work in progress.
 ### TODOs
 <!-- MDUP:BEG (CMD:make list-todo) -->
 ```
+- arrays
+- impl rule110
 - tests for expected errors
 - attach loc info to AST nodes and do standardised error reporting: `filename:line:col: message`
 - base error class w/ ln,col info
 - typing: value for each type, errors, ...
-- arrays
-- impl rule110
 - tracebacks (pass context around?)
 - "did you mean?" for errors
 - AST node for comments?
@@ -47,7 +47,7 @@ The project uses [`uv`](https://docs.astral.sh/uv/) which I highly recommend for
 git clone https://github.com/alexandru-dinu/spool.git
 cd spool
 uv sync
-uv run src/spool.py examples/collatz.spl
+uv run spool examples/collatz.spl
 ```
 
 ## Examples

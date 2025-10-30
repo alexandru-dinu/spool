@@ -6,6 +6,17 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = []
 
+[dependency-groups]
+dev = [
+    "pytest>=8.4.2",
+]
+
+[project.scripts]
+spool = "spool:main"
+
+[tool.uv]
+package = true
+
 [tool.ruff.lint]
 select = [
     "E",    # pycodestyle errors
@@ -38,9 +49,3 @@ ignore_missing_imports = true
 strict_equality = true
 follow_imports = "silent"
 show_error_codes = true
-
-[dependency-groups]
-dev = [
-    "pytest>=8.4.2",
-]
-
