@@ -36,6 +36,7 @@ KEYWORDS = [
     "if",
     "len",
     "or",
+    "over",
     "peek",
     "pop",
     "round",
@@ -239,6 +240,11 @@ class Dup(Node):
 
 
 @dataclass
+class Over(Node):
+    pass
+
+
+@dataclass
 class Pop(Node):
     pass
 
@@ -430,6 +436,8 @@ class SpoolAST:
                     nodes.append(Swap())
                 case "dup":
                     nodes.append(Dup())
+                case "over":
+                    nodes.append(Over())
                 case "pop":
                     nodes.append(Pop())
 
@@ -557,7 +565,7 @@ class SpoolInterpreter:
                     self.stack.append(len(x))
 
                 case Swap():
-                    # [..., a, b] becomes [..., b, a]
+                    # ( a b -- b a )
                     if len(self.stack) < 2:
                         raise SpoolStackError(
                             f"Insufficient values on the stack for operation `swap`. Expected >= 2, got {len(self.stack)}."
@@ -565,6 +573,14 @@ class SpoolInterpreter:
                     b, a = self.stack.pop(), self.stack.pop()
                     self.stack.append(b)
                     self.stack.append(a)
+
+                case Over():
+                    # ( a b -- a b a )
+                    if len(self.stack) < 2:
+                        raise SpoolStackError(
+                            f"Insufficient values on the stack for operation `over`. Expected >= 2, got {len(self.stack)}."
+                        )
+                    self.stack.append(self.stack[-2])
 
                 case Dup():
                     if self.stack:
