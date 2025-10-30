@@ -16,6 +16,7 @@ The project is experimental and work in progress.
 - `"strings"` and string manipulation: len, indexing
 - if, if/else: `<cond> if <true> [else <false>] <end>`
 - functions: `func <name> <arg1>..<argN> do <body> end`
+- recursion
 - while loops: `while <cond> do <body> end`
 - for loops: `<start> <stop> <inc> for <index> do <body> end`
 - `# inline comments`
@@ -108,7 +109,7 @@ end
 ```
 <!-- MDUP:END -->
 
-### sin Taylor approximation
+### Sine Taylor approximation
 <!-- MDUP:BEG (CMD:cat examples/sin_approx.spl) -->
 ```
 func factorial n
@@ -142,5 +143,51 @@ end
 @pi 4 / call sin round 3 peek    # 0.707
 @pi 3 / call sin round 3 peek    # 0.866
 @pi 2 / call sin round 3 peek    # 1.0
+```
+<!-- MDUP:END -->
+
+### Recursion
+<!-- MDUP:BEG (CMD:cat examples/recursion.spl) -->
+```
+func fact_tail_rec n acc do
+    @n 1 == if
+        @acc
+    else
+        @n 1 -
+        @acc @n *
+        call fact_tail_rec
+    end
+end
+
+func fact n do
+    @n 1 == if
+        1
+    else
+        @n
+        dup 1 -
+        call fact
+        *
+    end
+end
+
+10 1 call fact_tail_rec peek
+20 call fact peek
+```
+<!-- MDUP:END -->
+<!-- MDUP:BEG (CMD:cat examples/fibonacci.spl) -->
+```
+func fib n do
+    @n 1 <= if
+        @n
+    else
+        @n 1 - call fib
+        @n 2 - call fib
+        +
+    end
+end
+
+1 11 1 for i do
+    @i call fib peek
+end
 ```
 <!-- MDUP:END -->

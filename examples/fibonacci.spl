@@ -1,0 +1,13 @@
+func fib n do
+    @n 1 <= if
+        @n
+    else
+        @n 1 - call fib
+        @n 2 - call fib
+        +
+    end
+end
+
+1 11 1 for i do
+    @i call fib peek
+end

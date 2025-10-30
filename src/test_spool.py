@@ -1,4 +1,5 @@
 import textwrap
+from math import factorial
 from pathlib import Path
 
 import pytest
@@ -300,3 +301,8 @@ def test_token_loc():
         Token(line=4, col=10, val="$ws"),
         Token(line=5, col=1, val="dump"),
     ]
+
+
+def test_recursion(examples_root):
+    assert list(spool((examples_root / "recursion.spl").read_text())) == [factorial(10), factorial(20)]
+    assert list(spool((examples_root / "fibonacci.spl").read_text())) == [1, 1, 2, 3, 5, 8, 13, 21, 34, 55]

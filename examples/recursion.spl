@@ -1,0 +1,23 @@
+func fact_tail_rec n acc do
+    @n 1 == if
+        @acc
+    else
+        @n 1 -
+        @acc @n *
+        call fact_tail_rec
+    end
+end
+
+func fact n do
+    @n 1 == if
+        1
+    else
+        @n
+        dup 1 -
+        call fact
+        *
+    end
+end
+
+10 1 call fact_tail_rec peek
+20 call fact peek
