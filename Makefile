@@ -4,7 +4,7 @@ all:
 
 .PHONY: test
 test:
-	@uv run pytest -vv src/test_*.py
+	@uv run pytest -vv src/test_spool.py src/test_euler.py
 
 .PHONY: lint
 lint:

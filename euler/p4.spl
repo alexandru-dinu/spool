@@ -1,0 +1,26 @@
+func max a b do
+    @a @b > if @a else @b end
+end
+
+func rev n do
+    0 $out
+    while @n 0 > do
+        @out 10 * @n 10 % + $out
+        @n 10 // $n
+    end
+    @out
+end
+
+-1 $res
+999 99 -1 for x do
+    999 @x 1 - -1 for y do
+        @x @y * $cur
+        @cur @res > if # worth checking, o/w should break (TODO: impl break)
+            @cur dup call rev == if
+                @cur @res call max $res
+            end
+        end
+    end
+end
+
+@res peek

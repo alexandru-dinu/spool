@@ -1,0 +1,15 @@
+600851475143 $n
+2 $div
+
+while
+    @div dup * @n <
+do
+    while
+        @n @div % 0 ==
+    do
+        @n @div // $n
+    end
+    @div 1 + $div
+end
+
+@n peek

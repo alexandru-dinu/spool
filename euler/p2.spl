@@ -1,0 +1,11 @@
+0 $res
+0 $a 1 $b
+while
+    @b 4000000 <=
+do
+    @b @a over + $b $a
+    @b 2 % 0 == if
+        @res @b + $res
+    end
+end
+@res peek

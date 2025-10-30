@@ -51,6 +51,10 @@ uv run spool examples/collatz.spl
 ```
 
 ## Examples
+
+> [!TIP]
+> See also the [solutions](./euler/) to few [Project Euler](https://projecteuler.net/) problems.
+
 ### Hello, World!
 ```
 # A classic

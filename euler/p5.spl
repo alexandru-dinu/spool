@@ -1,0 +1,19 @@
+func gcd a b do
+    while @b 0 > do
+        @b @a over % $b $a
+    end
+    @a
+end
+
+func lcm a b do
+    @a @b call gcd
+    @a @b *
+    swap //
+end
+
+1 $res
+2 21 1 for i do
+    @res @i call lcm $res
+end
+
+@res peek
