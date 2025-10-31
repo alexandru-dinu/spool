@@ -1,24 +1,29 @@
 func is_prime n do
-    2 $d
+    @n 1 <= if
+        "false" ret
+    end
 
-    0 $done
+    @n 3 <= if
+        "true" ret
+    end
+
+    @n 2 % 0 ==
+    @n 3 % 0 ==
+    or if
+        "false" ret
+    end
+
+    5 $d
     while @d 2 ** @n <= do
-        @n @d % 0 == if
-            "False"
-            1 $done
-            break # TODO (should return)
+        @n @d % 0 ==        # 6k-1
+        @n @d 2 + % 0 ==    # 6k+1
+        or if
+            "false" ret
         end
-        @d 1 + $d
+        @d 6 + $d
     end
 
-    1 @done - if # TODO (poor man's not)
-        "True"
-    end
+    "true" ret
 end
 
-
-#2 21 1 for n do
-#    @n peek call is_prime peek
-#end
-
-100000001923 peek call is_prime peek
+100000001923 call is_prime peek

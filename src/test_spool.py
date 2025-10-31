@@ -297,6 +297,46 @@ def test_func_scoping():
     assert list(spool(prog)) == [{"a": 10, "b": 20, "Gx": -1, "Gy": 2, "local": -2}, {"Gx": 1, "Gy": 2}]
 
 
+def test_return():
+    with pytest.raises(SpoolSyntaxError):
+        list(spool("1 2 ret"))
+
+    prog = """
+        func foo x do
+            @x 2 % 0 == if
+                "even" ret
+            end
+            71237 "odd"
+        end
+
+        12 call foo peek pop
+        19 call foo dump
+    """
+    assert list(spool(prog)) == ["even", [71237, "odd"]]
+
+    prog = """
+        func foo n do
+            while @n 0 > do
+                @n 1 - $n
+
+                @n 3 == if
+                    "Push1" peek pop
+                    break
+                end
+            end
+
+            "Push2" peek pop
+
+            "Push3" peek pop
+            ret
+
+            "NoPush" peek pop
+        end
+        10 call foo
+    """
+    assert list(spool(prog)) == ["Push1", "Push2", "Push3"]
+
+
 def test_sin_approx(examples_root):
     prog = (examples_root / "sin_approx.spl").read_text()
     assert list(spool(prog)) == [0, 0.5, 0.707, 0.866, 1]
@@ -344,3 +384,11 @@ def test_token_loc():
 def test_recursion(examples_root):
     assert list(spool((examples_root / "recursion.spl").read_text())) == [factorial(10), factorial(20)]
     assert list(spool((examples_root / "fibonacci.spl").read_text())) == [1, 1, 2, 3, 5, 8, 13, 21, 34, 55]
+
+
+def test_prime(examples_root):
+    prog = (examples_root / "prime.spl").read_text().strip().rsplit("\n", 1)[0]
+    for i in [2, 7919, 700_001, 999_999_937]:
+        assert next(spool(prog + f"{i} call is_prime peek")) == "true"
+    for i in [4, 1_000_000, 738_739, 738_738_737]:
+        assert next(spool(prog + f"{i} call is_prime peek")) == "false"

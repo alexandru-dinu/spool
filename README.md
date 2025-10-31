@@ -62,6 +62,41 @@ uv run spool examples/collatz.spl
 "Hello, World!" peek
 ```
 
+### Primality Test
+<!-- MDUP:BEG (CMD:cat examples/prime.spl) -->
+```
+func is_prime n do
+    @n 1 <= if
+        "false" ret
+    end
+
+    @n 3 <= if
+        "true" ret
+    end
+
+    @n 2 % 0 ==
+    @n 3 % 0 ==
+    or if
+        "false" ret
+    end
+
+    5 $d
+    while @d 2 ** @n <= do
+        @n @d % 0 ==        # 6k-1
+        @n @d 2 + % 0 ==    # 6k+1
+        or if
+            "false" ret
+        end
+        @d 6 + $d
+    end
+
+    "true" ret
+end
+
+100000001923 call is_prime peek
+```
+<!-- MDUP:END -->
+
 ### Collatz Sequence
 <!-- MDUP:BEG (CMD:cat examples/collatz.spl) -->
 ```
