@@ -10,17 +10,37 @@ The name was born from the literal `StackPL`; I then decided to use the `.spl` e
 
 The project is experimental and work in progress.
 
-## Features
-- types: int / float / str
-- variables: get (`@foo`) and set (`$bar`)
-- `"strings"` and string manipulation: len, indexing
-- if, if/else: `<cond> if <true> [else <false>] <end>`
-- functions: `func <name> <arg1>..<argN> do <body> end`
-- recursion
-- while loops: `while <cond> do <body> end`
-- for loops: `<start> <stop> <inc> for <index> do <body> end`
-- `break`
-- `# inline comments`
+## Language Reference
+
+Stack notation is `( before -- after )`.
+
+| Syntax                                    | Description                                                                              | Stack                |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------- | -------------------- |
+| `123, 3.14, "hello"`                      | Push a value on the stack.                                                               | `( -- value )`       |
+| `+, -, *, /, //, %, **`                   | Arithmetic. `+` also handles str concat. `//` is integer division.                       | `( a b -- res )`     |
+| `x round n`                               | Round `x` to `n` digits; `n` must be a literal integer.                                  | `( x -- x' )`        |
+| `==, >, <, >=, <=`                        | Compare the top two values.                                                              | `( a b -- bool )`    |
+| `and, or`                                 | Apply `and`/`or` on the top two truthy values.                                           | `( a b -- bool )`    |
+| `@var`                                    | Push the value of the variable `var`.                                                    | `( -- val )`         |
+| `value $var`                              | Pop a value and assign it to `var`.                                                      | `( val -- )`         |
+| `pop`                                     | Pop the top item.                                                                        | `( a -- )`           |
+| `dup`                                     | Duplicate the top item.                                                                  | `( a -- a a )`       |
+| `swap`                                    | Swap the top two items.                                                                  | `( a b -- b a )`     |
+| `over`                                    | Copy the second item to the top.                                                         | `( a b -- a b a )`   |
+| `peek`                                    | Print the top item without removing it.                                                  | `( -- )`             |
+| `dump`                                    | Print the entire stack content.                                                          | `( -- )`             |
+| `vars`                                    | Prints the current variable context.                                                     | `( -- )`             |
+| `len`                                     | Pop an item (expected `str`) and push its length.                                        | `( str -- len )`     |
+| `!!`                                      | Pop index `i` and string `s`, then push `s[i]`.                                          | `( s i -- s[i] )`    |
+| `cond if true_block end`                  | Execute `true_block` if `cond` (popped) is truthy.                                       | `( cond -- )`        |
+| `cond if true_block else else_block end`  | Execute `true_block` if true, otherwise `else_block`.                                    | `( cond -- )`        |
+| `while cond do body end`                  | Repeatedly execute `cond` and, if true, execute `body`.                                  | `( -- )`             |
+| `start end inc for i do body end`         | Range loop, similar to `for i in range(s, e, i)`                                         | `( s e i -- )`       |
+| `break`                                   | Break from the innermost loop.                                                           | `( -- )`             |
+| `func name arg1... do body end`           | Define a function `name` with args `arg1...`, e.g. `func foo x y do <body> end`.         | `( -- )`             |
+| `val1... call name`                       | Push args, then call function `name`; results are on the stack.                          | `( val1... -- res )` |
+| `ret`                                     | Return. Exit the current function immediately (like `break`); results are on the stack.  | `( -- )`             |
+| `# comment text`                          | Everything from `#` to the end of the line is ignored.                                   | `( -- )`             |
 
 ### TODOs
 <!-- MDUP:BEG (CMD:make list-todo) -->
