@@ -148,6 +148,32 @@ def test_for():
     assert list(spool(prog)) == [1, 2, 3, 4, {"start": 1, "stop": 5, "i": 4}]
 
 
+def test_break():
+    prog = """\
+        1 10 1 for i do
+            @i 5 == if
+                break
+            end
+            @i peek
+        end
+        vars
+        """
+    assert list(spool(prog)) == [1, 2, 3, 4, {"i": 5}]
+
+    prog = """\
+        0 $i
+        while @i 10 < do
+            @i 7 >= if break end
+            @i 1 + $i
+        end
+        vars
+        """
+    assert list(spool(prog)) == [{"i": 7}]
+
+    with pytest.raises(SpoolSyntaxError):
+        list(spool("1 2 + break"))
+
+
 def test_strings():
     prog = """\
         "foo" $x

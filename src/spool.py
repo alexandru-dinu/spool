@@ -25,6 +25,7 @@ type Value = int | float | str
 
 KEYWORDS = [
     "and",
+    "break",
     "call",
     "do",
     "dump",
@@ -72,6 +73,10 @@ class SpoolStackError(Exception):
 
 
 class SpoolVarsError(Exception):
+    pass
+
+
+class SpoolBreak(Exception):  # noqa
     pass
 
 
@@ -210,6 +215,11 @@ class While(Node):
 class For(Node):
     index: str
     body: Block
+
+
+@dataclass
+class Break(Node):
+    pass
 
 
 @dataclass
@@ -401,6 +411,9 @@ class SpoolAST:
 
                     pc = pc_end
 
+                case "break":
+                    nodes.append(Break())
+
                 case "func":
                     # func <name> <arg1>..<argN> do <body> end
                     name = tokens[pc + 1].val
@@ -466,9 +479,9 @@ class SpoolInterpreter:
         self.funcs: dict[str, tuple[list[str], Block]] = {}  # name -> (args, body)
 
     def run(self) -> Generator:
-        yield from self.__run(self.ast.root, ctx_vars=self.global_vars, pc=0)
+        yield from self.__run(self.ast.root, ctx_vars=self.global_vars, in_loop=False)
 
-    def __run(self, nodes: Block, ctx_vars: dict, pc: int = 0) -> Generator:
+    def __run(self, nodes: Block, ctx_vars: dict, in_loop) -> Generator:
         for node in nodes.stmts:
             match node:
                 case Push(val):
@@ -514,16 +527,25 @@ class SpoolInterpreter:
                     if not self.stack:
                         raise SpoolStackError("Stack is empty.")
                     if self.stack.pop():
-                        yield from self.__run(true_block, ctx_vars=ctx_vars)
+                        yield from self.__run(true_block, ctx_vars=ctx_vars, in_loop=in_loop)
                     elif else_block:
-                        yield from self.__run(else_block, ctx_vars=ctx_vars)
+                        yield from self.__run(else_block, ctx_vars=ctx_vars, in_loop=in_loop)
+
+                case Break():
+                    if not in_loop:
+                        raise SpoolSyntaxError("'break' outside loop")
+                    else:
+                        raise SpoolBreak()
 
                 case While(cond, body):
                     while True:
-                        yield from self.__run(cond, ctx_vars=ctx_vars)
+                        yield from self.__run(cond, ctx_vars=ctx_vars, in_loop=in_loop)
                         if not self.stack.pop():
                             break
-                        yield from self.__run(body, ctx_vars=ctx_vars)
+                        try:
+                            yield from self.__run(body, ctx_vars=ctx_vars, in_loop=True)
+                        except SpoolBreak:
+                            break
 
                 case For(index, body):
                     if (_n := len(self.stack)) < 3:
@@ -537,7 +559,10 @@ class SpoolInterpreter:
                     for i in range(start, end, inc):  # type: ignore
                         # inject index var into context
                         ctx_vars[index] = i
-                        yield from self.__run(body, ctx_vars=ctx_vars)
+                        try:
+                            yield from self.__run(body, ctx_vars=ctx_vars, in_loop=True)
+                        except SpoolBreak:
+                            break
 
                 case Func(name, args, body):
                     self.funcs[name] = (args, body)
@@ -553,7 +578,9 @@ class SpoolInterpreter:
                         )
                     # prepopulate the ctx with `arity` values from the stack into the given names
                     yield from self.__run(
-                        func_body, ctx_vars=self.global_vars | {arg: self.stack.pop() for arg in args[::-1]}
+                        func_body,
+                        ctx_vars=self.global_vars | {arg: self.stack.pop() for arg in args[::-1]},
+                        in_loop=in_loop,
                     )
 
                 case Len():

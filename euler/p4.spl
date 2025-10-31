@@ -15,10 +15,11 @@ end
 999 99 -1 for x do
     999 @x 1 - -1 for y do
         @x @y * $cur
-        @cur @res > if # worth checking, o/w should break (TODO: impl break)
-            @cur dup call rev == if
-                @cur @res call max $res
-            end
+        @cur @res <= if # cannot find a better result
+            break
+        end
+        @cur dup call rev == if
+            @cur @res call max $res
         end
     end
 end
