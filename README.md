@@ -19,6 +19,7 @@ The project is experimental and work in progress.
 - recursion
 - while loops: `while <cond> do <body> end`
 - for loops: `<start> <stop> <inc> for <index> do <body> end`
+- `break`
 - `# inline comments`
 
 ### TODOs
