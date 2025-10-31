@@ -1,0 +1,24 @@
+func is_prime n do
+    2 $d
+
+    0 $done
+    while @d 2 ** @n <= do
+        @n @d % 0 == if
+            "False"
+            1 $done
+            break # TODO (should return)
+        end
+        @d 1 + $d
+    end
+
+    1 @done - if # TODO (poor man's not)
+        "True"
+    end
+end
+
+
+#2 21 1 for n do
+#    @n peek call is_prime peek
+#end
+
+100000001923 peek call is_prime peek
