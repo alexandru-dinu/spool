@@ -1,13 +1,10 @@
-func sum_sq n do
-    @n
-    @n 1 +
-    @n 2 * 1 +
-    * *
-    6 //
-end
-
-func sq_sum n do
-    @n dup 1 + * 2 // 2 **
-end
-
-100 dup call sq_sum over call sum_sq - peek
+# direct formula
+100 $n
+@n 4 ** 4 //
+@n 3 ** 6 //
++
+@n 2 ** 4 //
+-
+@n 6 //
+-
+peek
