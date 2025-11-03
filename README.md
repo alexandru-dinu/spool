@@ -6,57 +6,6 @@ The name was born from the literal `StackPL`; I then decided to use the `.spl` e
 
 The project is experimental and work in progress.
 
-## Language Reference
-
-Stack notation is `( before -- after )`.
-
-| Syntax                                    | Description                                                                              | Stack                |
-| ----------------------------------------- | ---------------------------------------------------------------------------------------- | -------------------- |
-| `123, 3.14, "hello"`                      | Push a value on the stack.                                                               | `( -- value )`       |
-| `+, -, *, /, //, %, **`                   | Arithmetic. `+` also handles str concat. `//` is integer division.                       | `( a b -- res )`     |
-| `x round n`                               | Round `x` to `n` digits; `n` must be a literal integer.                                  | `( x -- x' )`        |
-| `==, >, <, >=, <=`                        | Compare the top two values.                                                              | `( a b -- bool )`    |
-| `and, or`                                 | Apply `and`/`or` on the top two truthy values.                                           | `( a b -- bool )`    |
-| `@var`                                    | Push the value of the variable `var`.                                                    | `( -- val )`         |
-| `value $var`                              | Pop a value and assign it to `var`.                                                      | `( val -- )`         |
-| `pop`                                     | Pop the top item.                                                                        | `( a -- )`           |
-| `dup`                                     | Duplicate the top item.                                                                  | `( a -- a a )`       |
-| `swap`                                    | Swap the top two items.                                                                  | `( a b -- b a )`     |
-| `over`                                    | Copy the second item to the top.                                                         | `( a b -- a b a )`   |
-| `peek`                                    | Print the top item without removing it.                                                  | `( -- )`             |
-| `dump`                                    | Print the entire stack content.                                                          | `( -- )`             |
-| `vars`                                    | Prints the current variable context.                                                     | `( -- )`             |
-| `len`                                     | Pop an item (expected `str`) and push its length.                                        | `( str -- len )`     |
-| `!!`                                      | Pop index `i` and string `s`, then push `s[i]`.                                          | `( s i -- s[i] )`    |
-| `cond if true_block end`                  | Execute `true_block` if `cond` (popped) is truthy.                                       | `( cond -- )`        |
-| `cond if true_block else else_block end`  | Execute `true_block` if true, otherwise `else_block`.                                    | `( cond -- )`        |
-| `while cond do body end`                  | Repeatedly execute `cond` and, if true, execute `body`.                                  | `( -- )`             |
-| `start end inc for i do body end`         | Range loop, similar to `for i in range(s, e, i)`                                         | `( s e i -- )`       |
-| `break`                                   | Break from the innermost loop.                                                           | `( -- )`             |
-| `func name arg1... do body end`           | Define a function `name` with args `arg1...`, e.g. `func foo x y do <body> end`.         | `( -- )`             |
-| `val1... call name`                       | Push args, then call function `name`; results are on the stack.                          | `( val1... -- res )` |
-| `ret`                                     | Return. Exit the current function immediately (like `break`); results are on the stack.  | `( -- )`             |
-| `# comment text`                          | Everything from `#` to the end of the line is ignored.                                   | `( -- )`             |
-
-### TODOs
-<!-- MDUP:BEG (CMD:make list-todo) -->
-```
-- arrays
-- impl rule110
-- tests for expected errors
-- attach loc info to AST nodes and do standardised error reporting: `filename:line:col: message`
-- base error class w/ ln,col info
-- typing: value for each type, errors, ...
-- tracebacks (pass context around?)
-- "did you mean?" for errors
-- AST node for comments?
-- multi-line strings?
-- account for constructs w/o spaces, e.g. `34 35+10* peek`?
-- library of utils
-- highlighter for vim
-```
-<!-- MDUP:END -->
-
 ## Usage
 The project uses [`uv`](https://docs.astral.sh/uv/) which I highly recommend for managing Python environments and dependencies.
 
@@ -253,3 +202,23 @@ end
 end
 ```
 <!-- MDUP:END -->
+
+## TODOs
+<!-- MDUP:BEG (CMD:make list-todo) -->
+```
+- arrays
+- impl rule110
+- tests for expected errors
+- attach loc info to AST nodes and do standardised error reporting: `filename:line:col: message`
+- base error class w/ ln,col info
+- typing: value for each type, errors, ...
+- tracebacks (pass context around?)
+- "did you mean?" for errors
+- AST node for comments?
+- multi-line strings?
+- account for constructs w/o spaces, e.g. `34 35+10* peek`?
+- library of utils
+- highlighter for vim
+```
+<!-- MDUP:END -->
+
