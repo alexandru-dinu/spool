@@ -1,8 +1,4 @@
-<p align="center">
-    <img src="./assets/spool.png" width="100px" style="vertical-align: middle;" />
-</p>
-
-# Spool
+# 🧵 Spool
 [![Tests](https://github.com/alexandru-dinu/spool/actions/workflows/main.yml/badge.svg)](https://github.com/alexandru-dinu/spool/actions/workflows/main.yml)
 
 *Spool* is a simple, stack-based programming language.
