@@ -28,7 +28,7 @@ uv run spool examples/collatz.spl
 ```
 
 ### Primality Test
-<!-- MDUP:BEG (CMD:cat examples/prime.spl) -->
+<!-- MDUP:BEG cat examples/prime.spl -->
 ```
 func is_prime n do
     @n 1 <= if
@@ -63,7 +63,7 @@ end
 <!-- MDUP:END -->
 
 ### Collatz Sequence
-<!-- MDUP:BEG (CMD:cat examples/collatz.spl) -->
+<!-- MDUP:BEG cat examples/collatz.spl -->
 ```
 func collatz_once x
 do
@@ -90,7 +90,7 @@ end
 <!-- MDUP:END -->
 
 ### FizzBuzz
-<!-- MDUP:BEG (CMD:cat examples/fizzbuzz.spl) -->
+<!-- MDUP:BEG cat examples/fizzbuzz.spl -->
 ```
 func fizzbuzz lo hi
 do
@@ -121,7 +121,7 @@ end
 <!-- MDUP:END -->
 
 ### Taylor Approximation of `sin`
-<!-- MDUP:BEG (CMD:cat examples/sin_approx.spl) -->
+<!-- MDUP:BEG cat examples/sin_approx.spl -->
 ```
 func factorial n
 do
@@ -158,7 +158,7 @@ end
 <!-- MDUP:END -->
 
 ### Recursion
-<!-- MDUP:BEG (CMD:cat examples/recursion.spl) -->
+<!-- MDUP:BEG cat examples/recursion.spl -->
 ```
 func fact_tail_rec n acc do
     @n 1 == if
@@ -185,7 +185,7 @@ end
 20 call fact peek
 ```
 <!-- MDUP:END -->
-<!-- MDUP:BEG (CMD:cat examples/fibonacci.spl) -->
+<!-- MDUP:BEG cat examples/fibonacci.spl -->
 ```
 func fib n do
     @n 1 <= if
@@ -204,7 +204,7 @@ end
 <!-- MDUP:END -->
 
 ## TODOs
-<!-- MDUP:BEG (CMD:make list-todo) -->
+<!-- MDUP:BEG make list-todo -->
 ```
 - arrays
 - impl rule110
