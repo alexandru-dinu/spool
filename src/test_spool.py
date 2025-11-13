@@ -1,4 +1,5 @@
 import textwrap
+from collections.abc import Generator
 from math import factorial
 from pathlib import Path
 
@@ -11,13 +12,26 @@ from spool import (
     SpoolSyntaxError,
     SpoolTokenizer,
     Token,
-    spool_prog,
+    handler,
 )
 
 
+def spool_prog(prog: str) -> Generator:
+    yield from handler(reraise=True)(filename="<string>", prog=prog)
+
+
+def spool_file(file: Path) -> Generator:
+    yield from handler(reraise=True)(filename=str(file), prog=file.read_text())
+
+
 @pytest.fixture
-def examples_root():
+def examples_root() -> Path:
     return Path(__file__).resolve().parents[1] / "examples"
+
+
+@pytest.fixture
+def euler_root() -> Path:
+    return Path(__file__).resolve().parents[1] / "euler"
 
 
 def test_bool():
@@ -220,7 +234,28 @@ def test_fizzbuzz():
             @i 1 + $i
         end
         """
-    assert list(spool_prog(prog)) == [1, 2, -3, 4, -5, -3, 7, 8, -3, -5, 11, -3, 13, 14, -15, 16, 17, -3, 19, -5]
+    assert list(spool_prog(prog)) == [
+        1,
+        2,
+        -3,
+        4,
+        -5,
+        -3,
+        7,
+        8,
+        -3,
+        -5,
+        11,
+        -3,
+        13,
+        14,
+        -15,
+        16,
+        17,
+        -3,
+        19,
+        -5,
+    ]
 
     # cleaner impl. with strings
     prog = """\
@@ -268,7 +303,7 @@ def test_fizzbuzz():
     ]
 
 
-def test_func(examples_root):
+def test_func(examples_root: Path):
     def _co(n):
         return 3 * n + 1 if n % 2 else n // 2
 
@@ -295,7 +330,10 @@ def test_func_scoping():
         10 20 call add
         vars
     """
-    assert list(spool_prog(prog)) == [{"a": 10, "b": 20, "Gx": -1, "Gy": 2, "local": -2}, {"Gx": 1, "Gy": 2}]
+    assert list(spool_prog(prog)) == [
+        {"a": 10, "b": 20, "Gx": -1, "Gy": 2, "local": -2},
+        {"Gx": 1, "Gy": 2},
+    ]
 
 
 def test_return():
@@ -338,12 +376,12 @@ def test_return():
     assert list(spool_prog(prog)) == ["Push1", "Push2", "Push3"]
 
 
-def test_sin_approx(examples_root):
+def test_sin_approx(examples_root: Path):
     prog = (examples_root / "sin_approx.spl").read_text()
     assert list(spool_prog(prog)) == [0, 0.5, 0.707, 0.866, 1]
 
 
-def test_tokenizer(examples_root):
+def test_tokenizer(examples_root: Path):
     prog = (examples_root / "tokenize_test.spl").read_text()
     assert list(spool_prog(prog)) == ["a_b", "a b", "xy zt  pq", "d", 690, [6]]
 
@@ -381,14 +419,34 @@ def test_token_loc():
     ]
 
 
-def test_recursion(examples_root):
-    assert list(spool_prog((examples_root / "recursion.spl").read_text())) == [factorial(10), factorial(20)]
-    assert list(spool_prog((examples_root / "fibonacci.spl").read_text())) == [1, 1, 2, 3, 5, 8, 13, 21, 34, 55]
+def test_recursion(examples_root: Path):
+    assert list(spool_prog((examples_root / "recursion.spl").read_text())) == [
+        factorial(10),
+        factorial(20),
+    ]
+    assert list(spool_prog((examples_root / "fibonacci.spl").read_text())) == [
+        1,
+        1,
+        2,
+        3,
+        5,
+        8,
+        13,
+        21,
+        34,
+        55,
+    ]
 
 
-def test_prime(examples_root):
+def test_prime(examples_root: Path):
     prog = (examples_root / "prime.spl").read_text().strip().rsplit("\n", 1)[0]
     for i in [2, 7919, 700_001, 999_999_937]:
         assert next(spool_prog(prog + f"{i} call is_prime peek")) == "true"
     for i in [4, 1_000_000, 738_739, 738_738_737]:
         assert next(spool_prog(prog + f"{i} call is_prime peek")) == "false"
+
+
+def test_euler(euler_root: Path):
+    true = [233168, 4613732, 6857, 906609, 232792560, 25164150]
+    for i, res in enumerate(true, start=1):
+        assert res == next(spool_file(euler_root / f"p{i}.spl"))

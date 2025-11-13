@@ -28,8 +28,8 @@ select = [
     "I",    # isort (import sorting)
     "N",    # pep8-naming
     "UP",   # pyupgrade (modern syntax)
-    # "TRY",  # tryceratops (exception handling)
     "PERF", # performance rules
+    "FURB", # refurb
 ]
 ignore = [
     "E501",  # line too long, handled by black
