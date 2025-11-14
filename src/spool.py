@@ -80,14 +80,6 @@ class Token:
     loc: Location
 
 
-class SpoolBreak(Exception):  # noqa
-    pass
-
-
-class SpoolReturn(Exception):  # noqa
-    pass
-
-
 def try_numeric(x: str) -> int | float | None:
     try:
         f = float(x)
@@ -351,6 +343,14 @@ class SpoolTokenizer:
                     col += len(cur)
 
 
+class SpoolBreak(Exception):  # noqa
+    pass
+
+
+class SpoolReturn(Exception):  # noqa
+    pass
+
+
 class SpoolAST:
     def __init__(self, tokens: list[Token]):
         self.root = self.parse(tokens)
@@ -528,120 +528,113 @@ class SpoolInterpreter:
     def __run(self, nodes: Block, ctx_vars: dict, in_loop: bool, in_func: bool) -> Generator:
         for node in nodes:
             match node:
-                case Push():
-                    self.stack.append(node.val)
+                case Push(loc=loc, val=val):
+                    self.stack.append(val)
 
-                case BinOp(op="!!"):
+                case BinOp(op="!!", loc=loc):
                     if len(self.stack) < 2:
                         raise SpoolRuntimeError(
                             message=f"Insufficient values on the stack for operation `!!`. Expected >= 2, got {len(self.stack)}.",
-                            loc=node.loc,
+                            loc=loc,
                         )
                     i, s = self.stack.pop(), self.stack.pop()
                     if not isinstance(s, str):
-                        raise SpoolRuntimeError(message=f"Cannot apply `!!` on value of type {type(s)}.", loc=node.loc)
+                        raise SpoolRuntimeError(message=f"Cannot apply `!!` on value of type {type(s)}.", loc=loc)
                     if not isinstance(i, int):
-                        raise SpoolRuntimeError(
-                            message=f"Cannot apply `!!` with index of type {type(i)}.", loc=node.loc
-                        )
+                        raise SpoolRuntimeError(message=f"Cannot apply `!!` with index of type {type(i)}.", loc=loc)
                     if not (0 <= i < len(s)):
                         raise SpoolRuntimeError(
-                            message=f"Index {i} is out of bounds for string of len {len(s)}.",
-                            loc=node.loc,
+                            message=f"Index {i} is out of bounds for string of len {len(s)}.", loc=loc
                         )
                     self.stack.append(s[i])
 
-                case BinOp():
+                case BinOp(op=op, loc=loc):
                     if len(self.stack) < 2:
                         raise SpoolRuntimeError(
-                            message=f"Insufficient values on the stack for operation `{node.op}`. Expected >= 2, got {len(self.stack)}.",
-                            loc=node.loc,
+                            message=f"Insufficient values on the stack for operation `{op}`. Expected >= 2, got {len(self.stack)}.",
+                            loc=loc,
                         )
                     b, a = self.stack.pop(), self.stack.pop()
-                    self.stack.append(BINOPS[node.op](a, b))
+                    self.stack.append(BINOPS[op](a, b))
 
-                case Round():
+                case Round(ndigits=ndigits, loc=loc):
                     if not self.stack:
-                        raise SpoolRuntimeError(message="Stack is empty.", loc=node.loc)
+                        raise SpoolRuntimeError(message="Stack is empty.", loc=loc)
                     x = self.stack.pop()
                     if not isinstance(x, (int, float)):
-                        raise SpoolRuntimeError(
-                            message=f"Cannot apply `round` on value of type {type(x)}.", loc=node.loc
-                        )
-                    self.stack.append(round(x, node.ndigits))
+                        raise SpoolRuntimeError(message=f"Cannot apply `round` on value of type {type(x)}.", loc=loc)
+                    self.stack.append(round(x, ndigits))
 
-                case Set():
+                case Set(loc=loc, var=var):
                     if not self.stack:
-                        raise SpoolRuntimeError(message="Stack is empty.", loc=node.loc)
-                    ctx_vars[node.var] = self.stack.pop()
+                        raise SpoolRuntimeError(message="Stack is empty.", loc=loc)
+                    ctx_vars[var] = self.stack.pop()
 
-                case Get():
-                    if node.var not in ctx_vars:
-                        raise SpoolRuntimeError(message=f"Variable `{node.var}` is not defined.", loc=node.loc)
-                    self.stack.append(ctx_vars[node.var])
+                case Get(loc=loc, var=var):
+                    if var not in ctx_vars:
+                        raise SpoolRuntimeError(message=f"Variable `{var}` is not defined.", loc=loc)
+                    self.stack.append(ctx_vars[var])
 
-                case If():
+                case If(loc=loc, true_block=true_block, else_block=else_block):
                     if not self.stack:
-                        raise SpoolRuntimeError(message="Stack is empty.", loc=node.loc)
+                        raise SpoolRuntimeError(message="Stack is empty.", loc=loc)
                     if self.stack.pop():
-                        yield from self.__run(node.true_block, ctx_vars=ctx_vars, in_loop=in_loop, in_func=in_func)
-                    elif node.else_block:
-                        yield from self.__run(node.else_block, ctx_vars=ctx_vars, in_loop=in_loop, in_func=in_func)
+                        yield from self.__run(true_block, ctx_vars=ctx_vars, in_loop=in_loop, in_func=in_func)
+                    elif else_block:
+                        yield from self.__run(else_block, ctx_vars=ctx_vars, in_loop=in_loop, in_func=in_func)
 
-                case Break():
+                case Break(loc=loc):
                     if not in_loop:
-                        raise SpoolRuntimeError(message="'break' outside loop", loc=node.loc)
+                        raise SpoolRuntimeError(message="'break' outside loop", loc=loc)
                     else:
                         raise SpoolBreak()
 
-                case Return():
+                case Return(loc=loc):
                     if not in_func:
-                        raise SpoolRuntimeError(message="'return' outside func", loc=node.loc)
+                        raise SpoolRuntimeError(message="'return' outside func", loc=loc)
                     else:
                         raise SpoolReturn()
 
-                case While():
+                case While(loc=loc, cond=cond, body=body):
                     while True:
-                        yield from self.__run(node.cond, ctx_vars=ctx_vars, in_loop=in_loop, in_func=in_func)
+                        yield from self.__run(cond, ctx_vars=ctx_vars, in_loop=in_loop, in_func=in_func)
                         if not self.stack.pop():
                             break
                         try:
-                            yield from self.__run(node.body, ctx_vars=ctx_vars, in_loop=True, in_func=in_func)
+                            yield from self.__run(body, ctx_vars=ctx_vars, in_loop=True, in_func=in_func)
                         except SpoolBreak:
                             break
 
-                case For():
+                case For(loc=loc, index=index, body=body):
                     if (_n := len(self.stack)) < 3:
                         raise SpoolRuntimeError(
                             message=f"For expects 3 values on the stack: <start> <end> <inc>, but stack size = {_n}.",
-                            loc=node.loc,
+                            loc=loc,
                         )
                     if not all(isinstance(x, int) for x in self.stack[-3:]):
-                        raise SpoolRuntimeError(
-                            message="For expects <start> <end> <inc> all of type int.", loc=node.loc
-                        )
+                        raise SpoolRuntimeError(message="For expects <start> <end> <inc> all of type int.", loc=loc)
 
                     inc, end, start = self.stack.pop(), self.stack.pop(), self.stack.pop()
                     for i in range(start, end, inc):  # type: ignore
                         # inject index var into context
-                        ctx_vars[node.index] = i
+                        ctx_vars[index] = i
                         try:
-                            yield from self.__run(node.body, ctx_vars=ctx_vars, in_loop=True, in_func=in_func)
+                            yield from self.__run(body, ctx_vars=ctx_vars, in_loop=True, in_func=in_func)
                         except SpoolBreak:
                             break
 
-                case Func():
-                    self.funcs[node.name] = (node.args, node.body)
+                case Func(loc=loc, name=name, args=args, body=body):
+                    self.funcs[name] = (args, body)
 
-                case Call():
-                    if node.func not in self.funcs:
-                        raise SpoolRuntimeError(message=f"Function `{node.func}` is not defined.", loc=node.loc)
-                    args, func_body = self.funcs[node.func]
+                case Call(loc=loc, func=func):
+                    if func not in self.funcs:
+                        raise SpoolRuntimeError(message=f"Function `{func}` is not defined.", loc=loc)
+                    args, func_body = self.funcs[func]
                     arity = len(args)
                     if (_n := len(self.stack)) < arity:
                         raise SpoolRuntimeError(
-                            message=f"Insufficient number of args for function `{node.func}`. Expected {arity} got {_n}.",
-                            loc=node.loc,
+                            message=f"Insufficient number of args for function `{func}`. Expected {arity} got {_n}.",
+                            loc=loc,
                         )
                     try:
                         # prepopulate the ctx with `arity` values from the stack into the given names
@@ -655,45 +648,47 @@ class SpoolInterpreter:
                         # return value is on the stack
                         continue
 
-                case Len():
+                case Len(loc=loc):
                     if not self.stack:
-                        raise SpoolRuntimeError(message="Stack is empty.", loc=node.loc)
+                        raise SpoolRuntimeError(message="Stack is empty.", loc=loc)
                     x = self.stack.pop()
                     if not isinstance(x, Sized):
-                        raise SpoolRuntimeError(message=f"Cannot apply `len` on value of type {type(x)}.", loc=node.loc)
+                        raise SpoolRuntimeError(message=f"Cannot apply `len` on value of type {type(x)}.", loc=loc)
                     self.stack.append(len(x))
 
-                case Swap():
-                    # ( a b -- b a )
+                case Swap(loc=loc):
                     if len(self.stack) < 2:
                         raise SpoolRuntimeError(
                             message=f"Insufficient values on the stack for operation `swap`. Expected >= 2, got {len(self.stack)}.",
-                            loc=node.loc,
+                            loc=loc,
                         )
                     b, a = self.stack.pop(), self.stack.pop()
                     self.stack.append(b)
                     self.stack.append(a)
 
-                case Over():
-                    # ( a b -- a b a )
+                case Over(loc=loc):
                     if len(self.stack) < 2:
                         raise SpoolRuntimeError(
                             message=f"Insufficient values on the stack for operation `over`. Expected >= 2, got {len(self.stack)}.",
-                            loc=node.loc,
+                            loc=loc,
                         )
                     self.stack.append(self.stack[-2])
 
-                case Dup():
-                    if self.stack:
-                        self.stack.append(self.stack[-1])
+                case Dup(loc=loc):
+                    if not self.stack:
+                        raise SpoolRuntimeError(message="Stack is empty.", loc=loc)
+                    self.stack.append(self.stack[-1])
 
-                case Pop():
-                    if self.stack:
-                        self.stack.pop()
+                case Pop(loc=loc):
+                    if not self.stack:
+                        raise SpoolRuntimeError(message="Stack is empty.", loc=loc)
+                    self.stack.pop()
 
                 # printing
-                case Peek():
-                    yield self.stack[-1] if self.stack else None
+                case Peek(loc=loc):
+                    if not self.stack:
+                        raise SpoolRuntimeError(message="Stack is empty.", loc=loc)
+                    yield self.stack[-1]
 
                 case Dump():
                     yield self.stack[::]

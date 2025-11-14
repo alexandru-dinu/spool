@@ -55,7 +55,6 @@ def test_arithmetic():
         +
         peek
         pop
-        pop
         1 2 3
         dump
         """
@@ -71,12 +70,11 @@ def test_vars():
         *
         peek
         $z
-        peek
         vars
         @y 17 / round 5
         peek
         """
-    assert list(spool_prog(prog)) == [230, None, {"x": 10, "y": 23, "z": 230}, round(23 / 17, 5)]
+    assert list(spool_prog(prog)) == [230, {"x": 10, "y": 23, "z": 230}, round(23 / 17, 5)]
 
 
 def test_if_else():
@@ -148,7 +146,7 @@ def test_nested_while():
 
 
 def test_for():
-    assert list(spool_prog("1 100 1 for i do end peek")) == [None]
+    assert list(spool_prog("1 100 1 for i do end dump")) == [[]]
 
     with pytest.raises(SpoolSyntaxError):
         list(spool_prog("1 100 1 for 123 do end peek"))
