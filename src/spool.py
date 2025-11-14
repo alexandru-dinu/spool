@@ -5,8 +5,6 @@ Simple stack-based PL.
 # TODO: arrays
 # TODO: impl rule110
 # TODO: tests for expected errors
-# TODO: attach loc info to AST nodes and do standardised error reporting: `filename:line:col: message`
-# TODO: base error class w/ ln,col info
 # TODO: typing: value for each type, errors, ...
 # TODO: tracebacks (pass context around?)
 # TODO: "did you mean?" for errors
@@ -16,6 +14,7 @@ Simple stack-based PL.
 # TODO: library of utils
 # TODO: highlighter for vim
 
+import sys
 from argparse import ArgumentParser
 from collections.abc import Callable, Generator, Sized
 from dataclasses import dataclass
@@ -65,16 +64,20 @@ BINOPS = {
 RESERVED = set(KEYWORDS) | set(BINOPS) | {"!!"}
 
 
-class SpoolSyntaxError(Exception):
-    pass
+@dataclass
+class Location:
+    filename: str
+    line: int
+    col: int
+
+    def __str__(self) -> str:
+        return f"{self.filename}:{self.line}:{self.col}"
 
 
-class SpoolStackError(Exception):
-    pass
-
-
-class SpoolVarsError(Exception):
-    pass
+@dataclass
+class Token:
+    val: str
+    loc: Location
 
 
 class SpoolBreak(Exception):  # noqa
@@ -85,14 +88,7 @@ class SpoolReturn(Exception):  # noqa
     pass
 
 
-@dataclass
-class Token:
-    line: int
-    col: int
-    val: str
-
-
-def try_numeric(x) -> int | float | None:
+def try_numeric(x: str) -> int | float | None:
     try:
         f = float(x)
         i = int(f)
@@ -121,19 +117,21 @@ def collect_until(keyword: str, tokens: list[Token], index: int) -> tuple[list[T
     level = 1  # 1 b/c we're in the process of parsing a block
 
     while i < len(tokens):
-        if tokens[i].val == keyword:
+        tok = tokens[i]
+        if tok.val == keyword:
             level -= 1
             if level == 0:
                 return block, i
             elif level < 0:
-                raise SpoolSyntaxError("Incorrect pairing of `end` instructions.")
-        elif requires_block(tokens[i]):
+                raise SpoolSyntaxError(message="Incorrect pairing of `end` instructions.", loc=tok.loc)
+        elif requires_block(tok):
             level += 1
 
-        block.append(tokens[i])
+        block.append(tok)
         i += 1
 
-    raise SpoolSyntaxError("Missing `end` keyword.")
+    start_tok = tokens[index]
+    raise SpoolSyntaxError(message=f"Missing `{keyword}` keyword.", loc=start_tok.loc)
 
 
 def split_else(tokens: list[Token]) -> tuple[list[Token], list[Token] | None]:
@@ -171,12 +169,10 @@ def itakewhile(pred: Callable, xs: str) -> tuple[str, int, bool]:
 
 @dataclass
 class Node:
-    pass
+    loc: Location
 
 
-@dataclass
-class Block(Node):
-    stmts: list[Node]
+type Block = list[Node]
 
 
 @dataclass
@@ -284,17 +280,33 @@ class Vars(Node):
     pass
 
 
+@dataclass
+class SpoolError(Exception):
+    message: str
+    loc: Location
+
+    def __str__(self) -> str:
+        return f"{self.loc}: {self.__class__.__name__}: {self.message}"
+
+
+class SpoolSyntaxError(SpoolError):
+    pass
+
+
+class SpoolRuntimeError(SpoolError):
+    pass
+
+
 class SpoolTokenizer:
-    def __init__(self, prog: str):
+    def __init__(self, prog: str, filename: str):
         self.prog = prog
+        self.filename = filename
 
     def tokenize(self) -> list[Token]:
         return list(self.__tok())
 
     def __tok(self) -> Generator:
-        """Tokenize the program.
-        TODO: simplify!
-        """
+        """Tokenize the program."""
         line = col = 1
         i = 0
         while i < len(self.prog):
@@ -323,17 +335,19 @@ class SpoolTokenizer:
                     in_str, offset, prog_end = itakewhile(lambda x: x != '"', self.prog[i + 1 :])
 
                     if prog_end or "\n" in in_str:
-                        raise SpoolSyntaxError(f"Unterminated string literal @ (line={line}, col={col})")
+                        raise SpoolSyntaxError(
+                            message="Unterminated string literal.", loc=Location(self.filename, line, col)
+                        )
 
                     end = i + offset + 2
-                    yield Token(line=line, col=col, val=self.prog[i:end])
+                    yield Token(val=self.prog[i:end], loc=Location(self.filename, line, col))
                     i = end
                     col += offset + 2
 
                 case _:
                     cur, offset, _ = itakewhile(lambda x: not x.isspace() and x != "#" and x != '"', self.prog[i:])
                     i += offset
-                    yield Token(line=line, col=col, val=cur)
+                    yield Token(val=cur, loc=Location(self.filename, line, col))
                     col += len(cur)
 
 
@@ -347,47 +361,50 @@ class SpoolAST:
     __repr__ = __str__
 
     def parse(self, tokens: list[Token], pc: int = 0) -> Block:
-        nodes: list[Node] = []
+        nodes: Block = []
 
         while pc < len(tokens):
             tok = tokens[pc]
 
             match tok.val:
                 case _ if is_string(tok.val):
-                    nodes.append(Push(val=tok.val.strip(tok.val[0])))
+                    nodes.append(Push(val=tok.val.strip(tok.val[0]), loc=tok.loc))
 
                 case _ if (num := try_numeric(tok.val)) is not None:
-                    nodes.append(Push(num))
+                    nodes.append(Push(val=num, loc=tok.loc))
 
                 case _ if tok.val in BINOPS.keys() | {"!!"}:
-                    nodes.append(BinOp(tok.val))
+                    nodes.append(BinOp(op=tok.val, loc=tok.loc))
 
                 case "round":
+                    ndigits_tok = tokens[pc + 1]
                     try:
-                        ndigits = int(tokens[pc + 1].val)
-                    except ValueError as e:
-                        raise SpoolSyntaxError("round: `ndigits must be an integer.") from e
+                        ndigits = int(ndigits_tok.val)
+                    except ValueError:
+                        raise SpoolSyntaxError(
+                            message="round: `ndigits must be an integer.", loc=ndigits_tok.loc
+                        ) from None
 
-                    nodes.append(Round(ndigits))
+                    nodes.append(Round(ndigits=ndigits, loc=tok.loc))
                     pc += 1
 
                 case _set if _set.startswith("$"):
                     v = _set[1:]
                     if not v:
-                        raise SpoolSyntaxError("No identifier to set. Syntax is: `$foo`.")
+                        raise SpoolSyntaxError(message="No identifier to set. Syntax is: `$foo`.", loc=tok.loc)
                     if not is_valid_ident(v):
-                        raise SpoolSyntaxError(f"Invalid identifier name `{v}`.")
+                        raise SpoolSyntaxError(message=f"Invalid identifier name `{v}`.", loc=tok.loc)
 
-                    nodes.append(Set(v))
+                    nodes.append(Set(var=v, loc=tok.loc))
 
                 case _get if _get.startswith("@"):
                     v = _get[1:]
                     if not v:
-                        raise SpoolSyntaxError("No identifier to get. Syntax is: `@foo`.")
+                        raise SpoolSyntaxError(message="No identifier to get. Syntax is: `@foo`.", loc=tok.loc)
                     if not is_valid_ident(v):
-                        raise SpoolSyntaxError(f"Invalid identifier name `{v}`.")
+                        raise SpoolSyntaxError(message=f"Invalid identifier name `{v}`.", loc=tok.loc)
 
-                    nodes.append(Get(v))
+                    nodes.append(Get(var=v, loc=tok.loc))
 
                 case "if":
                     block, pc_end = collect_until(keyword="end", tokens=tokens, index=pc + 1)
@@ -396,6 +413,7 @@ class SpoolAST:
                         If(
                             true_block=self.parse(true_block),
                             else_block=self.parse(else_block) if else_block else None,
+                            loc=tok.loc,
                         )
                     )
                     pc = pc_end
@@ -404,84 +422,97 @@ class SpoolAST:
                     # while <cond> do <body> end
                     block_cond, pc_do = collect_until(keyword="do", tokens=tokens, index=pc + 1)
                     block_body, pc_end = collect_until(keyword="end", tokens=tokens, index=pc_do + 1)
-                    nodes.append(While(cond=self.parse(block_cond), body=self.parse(block_body)))
+                    nodes.append(
+                        While(
+                            cond=self.parse(block_cond),
+                            body=self.parse(block_body),
+                            loc=tok.loc,
+                        )
+                    )
                     pc = pc_end
 
                 case "for":
                     # <start> <stop> <inc> for <index> do <body> end
                     indices, pc_do = collect_until(keyword="do", tokens=tokens, index=pc + 1)
                     assert len(indices) == 1  # NOTE: temporary
-                    index = indices[0]
-                    if not is_valid_ident(index.val):
-                        raise SpoolSyntaxError(f"{index.line}:{index.col}: Invalid identifier name `{index.val}`.")
+                    index_tok = indices[0]
+                    if not is_valid_ident(index_tok.val):
+                        raise SpoolSyntaxError(message=f"Invalid identifier name `{index_tok.val}`.", loc=index_tok.loc)
 
                     block, pc_end = collect_until(keyword="end", tokens=tokens, index=pc_do + 1)
 
-                    nodes.append(For(index=index.val, body=self.parse(block)))
+                    nodes.append(For(index=index_tok.val, body=self.parse(block), loc=tok.loc))
 
                     pc = pc_end
 
                 case "break":
-                    nodes.append(Break())
+                    nodes.append(Break(loc=tok.loc))
 
                 case "ret":
-                    nodes.append(Return())
+                    nodes.append(Return(loc=tok.loc))
 
                 case "func":
                     # func <name> <arg1>..<argN> do <body> end
-                    name = tokens[pc + 1].val
-                    if not is_valid_ident(name):
-                        raise SpoolSyntaxError(f"Invalid function name `{name}`.")
+                    name_tok = tokens[pc + 1]
+                    if not is_valid_ident(name_tok.val):
+                        raise SpoolSyntaxError(message=f"Invalid function name `{name_tok.val}`.", loc=name_tok.loc)
 
                     # collect args
                     args, pc_do = collect_until(keyword="do", tokens=tokens, index=pc + 2)
                     for a in args:
                         if not is_valid_ident(a.val):
-                            raise SpoolSyntaxError(f"Invalid arg name `{a.val}` @ (line={a.line}, col={a.col})")
+                            raise SpoolSyntaxError(message=f"Invalid arg name `{a.val}`.", loc=a.loc)
 
                     # collect body
                     body, pc_end = collect_until(keyword="end", tokens=tokens, index=pc_do + 1)
 
-                    nodes.append(Func(name=name, args=[a.val for a in args], body=self.parse(body)))
+                    nodes.append(
+                        Func(
+                            name=name_tok.val,
+                            args=[a.val for a in args],
+                            body=self.parse(body),
+                            loc=tok.loc,
+                        )
+                    )
 
                     pc = pc_end
 
                 case "call":
                     # <arg1> .. <argN> call <name>
-                    name = tokens[pc + 1].val
-                    if not is_valid_ident(name):
-                        raise SpoolSyntaxError(f"Invalid function name `{name}`.")
+                    name_tok = tokens[pc + 1]
+                    if not is_valid_ident(name_tok.val):
+                        raise SpoolSyntaxError(message=f"Invalid function name `{name_tok.val}`.", loc=name_tok.loc)
 
-                    nodes.append(Call(func=name))
+                    nodes.append(Call(func=name_tok.val, loc=tok.loc))
                     pc += 1
 
                 # unary ops
                 case "len":
-                    nodes.append(Len())
+                    nodes.append(Len(loc=tok.loc))
                 case "swap":
-                    nodes.append(Swap())
+                    nodes.append(Swap(loc=tok.loc))
                 case "dup":
-                    nodes.append(Dup())
+                    nodes.append(Dup(loc=tok.loc))
                 case "over":
-                    nodes.append(Over())
+                    nodes.append(Over(loc=tok.loc))
                 case "pop":
-                    nodes.append(Pop())
+                    nodes.append(Pop(loc=tok.loc))
 
                 # printing
                 case "peek":
-                    nodes.append(Peek())
+                    nodes.append(Peek(loc=tok.loc))
                 case "dump":
-                    nodes.append(Dump())
+                    nodes.append(Dump(loc=tok.loc))
                 case "vars":
-                    nodes.append(Vars())
+                    nodes.append(Vars(loc=tok.loc))
 
                 # errors
                 case _:
-                    raise SpoolSyntaxError(f"Invalid token {tok.val} @ (line={tok.line}, col={tok.col})")
+                    raise SpoolSyntaxError(message=f"Invalid token {tok.val}.", loc=tok.loc)
 
             pc += 1
 
-        return Block(nodes)
+        return nodes
 
 
 class SpoolInterpreter:
@@ -495,105 +526,122 @@ class SpoolInterpreter:
         yield from self.__run(self.ast.root, ctx_vars=self.global_vars, in_loop=False, in_func=False)
 
     def __run(self, nodes: Block, ctx_vars: dict, in_loop: bool, in_func: bool) -> Generator:
-        for node in nodes.stmts:
+        for node in nodes:
             match node:
-                case Push(val):
-                    self.stack.append(val)
+                case Push():
+                    self.stack.append(node.val)
 
-                case BinOp("!!"):
+                case BinOp(op="!!"):
                     if len(self.stack) < 2:
-                        raise SpoolStackError(
-                            f"Insufficient values on the stack for operation `!!`. Expected >= 2, got {len(self.stack)}."
+                        raise SpoolRuntimeError(
+                            message=f"Insufficient values on the stack for operation `!!`. Expected >= 2, got {len(self.stack)}.",
+                            loc=node.loc,
                         )
                     i, s = self.stack.pop(), self.stack.pop()
                     if not isinstance(s, str):
-                        raise SpoolVarsError(f"Cannot apply `!!` on value of type {type(s)}.")
+                        raise SpoolRuntimeError(message=f"Cannot apply `!!` on value of type {type(s)}.", loc=node.loc)
                     if not isinstance(i, int):
-                        raise SpoolVarsError(f"Cannot apply `!!` with index of type {type(i)}.")
+                        raise SpoolRuntimeError(
+                            message=f"Cannot apply `!!` with index of type {type(i)}.", loc=node.loc
+                        )
                     if not (0 <= i < len(s)):
-                        raise SpoolVarsError(f"Index {i} is out of bounds for string of len {len(s)}.")
+                        raise SpoolRuntimeError(
+                            message=f"Index {i} is out of bounds for string of len {len(s)}.",
+                            loc=node.loc,
+                        )
                     self.stack.append(s[i])
 
-                case BinOp(op):
+                case BinOp():
+                    if len(self.stack) < 2:
+                        raise SpoolRuntimeError(
+                            message=f"Insufficient values on the stack for operation `{node.op}`. Expected >= 2, got {len(self.stack)}.",
+                            loc=node.loc,
+                        )
                     b, a = self.stack.pop(), self.stack.pop()
-                    self.stack.append(BINOPS[op](a, b))
+                    self.stack.append(BINOPS[node.op](a, b))
 
-                case Round(ndigits):
+                case Round():
                     if not self.stack:
-                        raise SpoolStackError("Stack is empty.")
+                        raise SpoolRuntimeError(message="Stack is empty.", loc=node.loc)
                     x = self.stack.pop()
                     if not isinstance(x, (int, float)):
-                        raise SpoolVarsError(f"Cannot apply `round` on value of type {type(x)}.")
-                    self.stack.append(round(x, ndigits))
+                        raise SpoolRuntimeError(
+                            message=f"Cannot apply `round` on value of type {type(x)}.", loc=node.loc
+                        )
+                    self.stack.append(round(x, node.ndigits))
 
-                case Set(var):
+                case Set():
                     if not self.stack:
-                        raise SpoolStackError("Stack is empty.")
-                    ctx_vars[var] = self.stack.pop()
+                        raise SpoolRuntimeError(message="Stack is empty.", loc=node.loc)
+                    ctx_vars[node.var] = self.stack.pop()
 
-                case Get(var):
-                    if var not in ctx_vars:
-                        raise SpoolVarsError(f"Variable `{var}` is not defined.")
-                    self.stack.append(ctx_vars[var])
+                case Get():
+                    if node.var not in ctx_vars:
+                        raise SpoolRuntimeError(message=f"Variable `{node.var}` is not defined.", loc=node.loc)
+                    self.stack.append(ctx_vars[node.var])
 
-                case If(true_block, else_block):
+                case If():
                     if not self.stack:
-                        raise SpoolStackError("Stack is empty.")
+                        raise SpoolRuntimeError(message="Stack is empty.", loc=node.loc)
                     if self.stack.pop():
-                        yield from self.__run(true_block, ctx_vars=ctx_vars, in_loop=in_loop, in_func=in_func)
-                    elif else_block:
-                        yield from self.__run(else_block, ctx_vars=ctx_vars, in_loop=in_loop, in_func=in_func)
+                        yield from self.__run(node.true_block, ctx_vars=ctx_vars, in_loop=in_loop, in_func=in_func)
+                    elif node.else_block:
+                        yield from self.__run(node.else_block, ctx_vars=ctx_vars, in_loop=in_loop, in_func=in_func)
 
                 case Break():
                     if not in_loop:
-                        raise SpoolSyntaxError("'break' outside loop")
+                        raise SpoolRuntimeError(message="'break' outside loop", loc=node.loc)
                     else:
                         raise SpoolBreak()
 
                 case Return():
                     if not in_func:
-                        raise SpoolSyntaxError("'return' outside func")
+                        raise SpoolRuntimeError(message="'return' outside func", loc=node.loc)
                     else:
                         raise SpoolReturn()
 
-                case While(cond, body):
+                case While():
                     while True:
-                        yield from self.__run(cond, ctx_vars=ctx_vars, in_loop=in_loop, in_func=in_func)
+                        yield from self.__run(node.cond, ctx_vars=ctx_vars, in_loop=in_loop, in_func=in_func)
                         if not self.stack.pop():
                             break
                         try:
-                            yield from self.__run(body, ctx_vars=ctx_vars, in_loop=True, in_func=in_func)
+                            yield from self.__run(node.body, ctx_vars=ctx_vars, in_loop=True, in_func=in_func)
                         except SpoolBreak:
                             break
 
-                case For(index, body):
+                case For():
                     if (_n := len(self.stack)) < 3:
-                        raise SpoolStackError(
-                            f"For expects 3 values on the stack: <start> <end> <inc>, but stack size = {_n}."
+                        raise SpoolRuntimeError(
+                            message=f"For expects 3 values on the stack: <start> <end> <inc>, but stack size = {_n}.",
+                            loc=node.loc,
                         )
                     if not all(isinstance(x, int) for x in self.stack[-3:]):
-                        raise SpoolStackError("For expects <start> <end> <inc> all of type int.")
+                        raise SpoolRuntimeError(
+                            message="For expects <start> <end> <inc> all of type int.", loc=node.loc
+                        )
 
                     inc, end, start = self.stack.pop(), self.stack.pop(), self.stack.pop()
                     for i in range(start, end, inc):  # type: ignore
                         # inject index var into context
-                        ctx_vars[index] = i
+                        ctx_vars[node.index] = i
                         try:
-                            yield from self.__run(body, ctx_vars=ctx_vars, in_loop=True, in_func=in_func)
+                            yield from self.__run(node.body, ctx_vars=ctx_vars, in_loop=True, in_func=in_func)
                         except SpoolBreak:
                             break
 
-                case Func(name, args, body):
-                    self.funcs[name] = (args, body)
+                case Func():
+                    self.funcs[node.name] = (node.args, node.body)
 
-                case Call(func):
-                    if func not in self.funcs:
-                        raise SpoolVarsError(f"Function `{func}` is not defined.")
-                    args, func_body = self.funcs[func]
+                case Call():
+                    if node.func not in self.funcs:
+                        raise SpoolRuntimeError(message=f"Function `{node.func}` is not defined.", loc=node.loc)
+                    args, func_body = self.funcs[node.func]
                     arity = len(args)
                     if (_n := len(self.stack)) < arity:
-                        raise SpoolStackError(
-                            f"Insufficient number of args for function `{func}`. Expected {arity} got {_n}."
+                        raise SpoolRuntimeError(
+                            message=f"Insufficient number of args for function `{node.func}`. Expected {arity} got {_n}.",
+                            loc=node.loc,
                         )
                     try:
                         # prepopulate the ctx with `arity` values from the stack into the given names
@@ -609,17 +657,18 @@ class SpoolInterpreter:
 
                 case Len():
                     if not self.stack:
-                        raise SpoolStackError("Stack is empty.")
+                        raise SpoolRuntimeError(message="Stack is empty.", loc=node.loc)
                     x = self.stack.pop()
                     if not isinstance(x, Sized):
-                        raise SpoolVarsError(f"Cannot apply `len` on value of type {type(x)}.")
+                        raise SpoolRuntimeError(message=f"Cannot apply `len` on value of type {type(x)}.", loc=node.loc)
                     self.stack.append(len(x))
 
                 case Swap():
                     # ( a b -- b a )
                     if len(self.stack) < 2:
-                        raise SpoolStackError(
-                            f"Insufficient values on the stack for operation `swap`. Expected >= 2, got {len(self.stack)}."
+                        raise SpoolRuntimeError(
+                            message=f"Insufficient values on the stack for operation `swap`. Expected >= 2, got {len(self.stack)}.",
+                            loc=node.loc,
                         )
                     b, a = self.stack.pop(), self.stack.pop()
                     self.stack.append(b)
@@ -628,8 +677,9 @@ class SpoolInterpreter:
                 case Over():
                     # ( a b -- a b a )
                     if len(self.stack) < 2:
-                        raise SpoolStackError(
-                            f"Insufficient values on the stack for operation `over`. Expected >= 2, got {len(self.stack)}."
+                        raise SpoolRuntimeError(
+                            message=f"Insufficient values on the stack for operation `over`. Expected >= 2, got {len(self.stack)}.",
+                            loc=node.loc,
                         )
                     self.stack.append(self.stack[-2])
 
@@ -651,16 +701,32 @@ class SpoolInterpreter:
                 case Vars():
                     yield ctx_vars.copy()
 
-                case other:
-                    raise SpoolSyntaxError(f"Invalid AST node `{other}`.")
+                case _:
+                    raise AssertionError("should not happen")
 
 
-def spool(prog: str) -> Generator:
-    """Wrapper for convenience"""
-    tokens = SpoolTokenizer(prog).tokenize()
-    ast = SpoolAST(tokens)
-    out = SpoolInterpreter(ast).run()
-    return out
+def handler(reraise=False):
+    def wrapper(filename: str, prog: str) -> Generator:
+        try:
+            tokens = SpoolTokenizer(filename=filename, prog=prog).tokenize()
+            ast = SpoolAST(tokens)
+            yield from SpoolInterpreter(ast).run()
+        except (SpoolSyntaxError, SpoolRuntimeError) as e:
+            if reraise:  # for tests
+                raise e
+            else:
+                print(e, file=sys.stderr)
+                sys.exit(1)
+
+    return wrapper
+
+
+def spool_prog(prog: str) -> Generator:
+    yield from handler(reraise=False)(filename="<string>", prog=prog)
+
+
+def spool_file(file: Path) -> Generator:
+    yield from handler(reraise=False)(filename=str(file), prog=file.read_text())
 
 
 def main():
@@ -668,7 +734,7 @@ def main():
     parser.add_argument("file", type=Path)
     args = parser.parse_args()
 
-    for o in spool(args.file.read_text()):
+    for o in spool_file(args.file):
         print(o)
 
 

@@ -209,8 +209,6 @@ end
 - arrays
 - impl rule110
 - tests for expected errors
-- attach loc info to AST nodes and do standardised error reporting: `filename:line:col: message`
-- base error class w/ ln,col info
 - typing: value for each type, errors, ...
 - tracebacks (pass context around?)
 - "did you mean?" for errors
