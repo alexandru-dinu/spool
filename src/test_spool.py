@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from spool import (
+    Location,
     SpoolAST,
     SpoolInterpreter,
     SpoolRuntimeError,
@@ -407,15 +408,15 @@ def test_token_loc():
         filename="<string>",
     )
     assert t.tokenize() == [
-        Token(filename="<string>", line=1, col=1, val="1"),
-        Token(filename="<string>", line=1, col=3, val="2"),
-        Token(filename="<string>", line=1, col=5, val="peek"),
-        Token(filename="<string>", line=2, col=1, val="-2.53"),
-        Token(filename="<string>", line=2, col=7, val='"hello world"'),
-        Token(filename="<string>", line=2, col=21, val="0.02"),
-        Token(filename="<string>", line=4, col=4, val="$ws1"),
-        Token(filename="<string>", line=5, col=2, val="$ws2"),
-        Token(filename="<string>", line=6, col=1, val="dump"),
+        Token(loc=Location(filename="<string>", line=1, col=1), val="1"),
+        Token(loc=Location(filename="<string>", line=1, col=3), val="2"),
+        Token(loc=Location(filename="<string>", line=1, col=5), val="peek"),
+        Token(loc=Location(filename="<string>", line=2, col=1), val="-2.53"),
+        Token(loc=Location(filename="<string>", line=2, col=7), val='"hello world"'),
+        Token(loc=Location(filename="<string>", line=2, col=21), val="0.02"),
+        Token(loc=Location(filename="<string>", line=4, col=4), val="$ws1"),
+        Token(loc=Location(filename="<string>", line=5, col=2), val="$ws2"),
+        Token(loc=Location(filename="<string>", line=6, col=1), val="dump"),
     ]
 
 
