@@ -74,7 +74,11 @@ def test_vars():
         @y 17 / round 5
         peek
         """
-    assert list(spool_prog(prog)) == [230, {"x": 10, "y": 23, "z": 230}, round(23 / 17, 5)]
+    assert list(spool_prog(prog)) == [
+        230,
+        {"x": 10, "y": 23, "z": 230},
+        round(23 / 17, 5),
+    ]
 
 
 def test_if_else():
@@ -142,7 +146,9 @@ def test_nested_while():
             @i 1 + $i
         end
         """
-    assert list(spool_prog(prog)) == sum([list(range(1, n + 1)) for n in range(1, 5 + 1)], [])
+    assert list(spool_prog(prog)) == sum(
+        [list(range(1, n + 1)) for n in range(1, 5 + 1)], []
+    )
 
 
 def test_for():
@@ -313,7 +319,11 @@ def test_func(examples_root: Path):
         yield from _cs(_co(n))
 
     for arg in [5, 27, 91, 871, 6171]:
-        prog = (examples_root / "collatz.spl").read_text().replace("5 call collatz_seq", f"{arg} call collatz_seq")
+        prog = (
+            (examples_root / "collatz.spl")
+            .read_text()
+            .replace("5 call collatz_seq", f"{arg} call collatz_seq")
+        )
         assert list(spool_prog(prog)) == list(_cs(arg))
 
 

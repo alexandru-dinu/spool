@@ -18,7 +18,7 @@ typecheck:
 format:
 	@uv run autoflake --in-place --remove-all-unused-imports src/*.py \
 		&& uv run isort src/*.py \
-		&& uv run black --line-length 120 src/*.py
+		&& uv run black --line-length=88 src/*.py
 
 .PHONY: refresh-readme
 refresh-readme:
